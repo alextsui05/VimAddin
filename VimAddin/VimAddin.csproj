@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectTypeGuids>{7DBEB09D-BB9F-4D92-A141-A009135475EF};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
+    <ProjectGuid>{775E978B-2C7E-4A27-A708-BBC685E5D567}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <RootNamespace>VimAddin</RootNamespace>
+    <AssemblyName>VimAddin</AssemblyName>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug</OutputPath>
+    <DefineConstants>DEBUG;</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <ConsolePause>false</ConsolePause>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>full</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release</OutputPath>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <ConsolePause>false</ConsolePause>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Xml" />
+    <Reference Include="System.Core" />
+    <Reference Include="Mono.Addins">
+      <Package>/media/x/c/monodevelop/main/build/bin/Mono.Addins.dll</Package>
+    </Reference>
+    <Reference Include="MonoDevelop.Core">
+      <Package>/media/x/c/monodevelop/main/build/bin/MonoDevelop.Core.dll</Package>
+    </Reference>
+    <Reference Include="MonoDevelop.Ide">
+      <Package>/media/x/c/monodevelop/main/build/bin/MonoDevelop.Ide.dll</Package>
+    </Reference>
+    <Reference Include="Mono.TextEditor">
+      <Package>/media/x/c/monodevelop/main/build/bin/Mono.TextEditor.dll</Package>
+    </Reference>
+    <Reference Include="ICSharpCode.NRefactory">
+      <Package>/media/x/c/monodevelop/main/build/bin/ICSharpCode.NRefactory.dll</Package>
+    </Reference>
+    <Reference Include="gtk-sharp">
+      <Package>gtk-sharp-2.0</Package>
+    </Reference>
+    <Reference Include="glib-sharp">
+      <Package>glib-sharp-2.0</Package>
+    </Reference>
+    <Reference Include="gdk-sharp">
+      <Package>gtk-sharp-2.0</Package>
+    </Reference>
+    <Reference Include="pango-sharp">
+      <Package>gtk-sharp-2.0</Package>
+    </Reference>
+    <Reference Include="Mono.Cairo" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Properties\AddinInfo.cs" />
+    <Compile Include="VimTextEditorExtension.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Properties\Manifest.addin.xml" />
+  </ItemGroup>
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+</Project>

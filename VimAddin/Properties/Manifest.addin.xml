@@ -1,0 +1,8 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<ExtensionModel>
+	<Runtime>
+	</Runtime>
+	<Extension path="/MonoDevelop/Ide/TextEditorExtensions">
+		<Class class="VimAddin.VimTextEditorExtension" />
+	</Extension>
+</ExtensionModel>
