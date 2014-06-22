@@ -59,14 +59,42 @@
       <Package>gtk-sharp-2.0</Package>
     </Reference>
     <Reference Include="Mono.Cairo" />
+    <Reference Include="atk-sharp, Version=2.12.0.0, Culture=neutral, PublicKeyToken=35e10195dab3c99f">
+      <Package>gtk-sharp-2.0</Package>
+    </Reference>
+    <Reference Include="MonoDevelop.SourceEditor2, Version=2.6.0.0, Culture=neutral">
+      <Package>monodevelop-core-addins</Package>
+    </Reference>
+    <Reference Include="MonoDevelop.DesignerSupport, Version=2.6.0.0, Culture=neutral">
+      <Package>monodevelop-core-addins</Package>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Properties\AddinInfo.cs" />
     <Compile Include="VimTextEditorExtension.cs" />
+    <Compile Include="Mono.TextEditor.Vi\NewViEditMode.cs" />
+    <Compile Include="Mono.TextEditor.Vi\ViActionMaps.cs" />
+    <Compile Include="Mono.TextEditor.Vi\ViActions.cs" />
+    <Compile Include="Mono.TextEditor.Vi\ViBuilderContext.cs" />
+    <Compile Include="Mono.TextEditor.Vi\ViBuilders.cs" />
+    <Compile Include="Mono.TextEditor.Vi\ViCommandMap.cs" />
+    <Compile Include="Mono.TextEditor.Vi\ViEditor.cs" />
+    <Compile Include="Mono.TextEditor.Vi\ViEditorActions.cs" />
+    <Compile Include="Mono.TextEditor.Vi\ViKeyNotation.cs" />
+    <Compile Include="Mono.TextEditor.Vi\ViMacro.cs" />
+    <Compile Include="Mono.TextEditor.Vi\ViMark.cs" />
+    <Compile Include="Mono.TextEditor.Vi\ViMode.cs" />
+    <Compile Include="Mono.TextEditor.Vi\ViModeAbortException.cs" />
+    <Compile Include="Mono.TextEditor.Vi\ViStatusArea.cs" />
+    <Compile Include="Mono.TextEditor.Vi\ViWordFindStrategy.cs" />
+    <Compile Include="IdeViMode.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Properties\Manifest.addin.xml" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <ItemGroup>
+    <Folder Include="Mono.TextEditor.Vi\" />
+  </ItemGroup>
 </Project>
