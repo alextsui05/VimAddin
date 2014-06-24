@@ -31,21 +31,6 @@
     <Reference Include="System" />
     <Reference Include="System.Xml" />
     <Reference Include="System.Core" />
-    <Reference Include="Mono.Addins">
-      <Package>/media/x/c/monodevelop/main/build/bin/Mono.Addins.dll</Package>
-    </Reference>
-    <Reference Include="MonoDevelop.Core">
-      <Package>/media/x/c/monodevelop/main/build/bin/MonoDevelop.Core.dll</Package>
-    </Reference>
-    <Reference Include="MonoDevelop.Ide">
-      <Package>/media/x/c/monodevelop/main/build/bin/MonoDevelop.Ide.dll</Package>
-    </Reference>
-    <Reference Include="Mono.TextEditor">
-      <Package>/media/x/c/monodevelop/main/build/bin/Mono.TextEditor.dll</Package>
-    </Reference>
-    <Reference Include="ICSharpCode.NRefactory">
-      <Package>/media/x/c/monodevelop/main/build/bin/ICSharpCode.NRefactory.dll</Package>
-    </Reference>
     <Reference Include="gtk-sharp">
       <Package>gtk-sharp-2.0</Package>
     </Reference>
@@ -67,6 +52,21 @@
     </Reference>
     <Reference Include="MonoDevelop.DesignerSupport, Version=2.6.0.0, Culture=neutral">
       <Package>monodevelop-core-addins</Package>
+    </Reference>
+    <Reference Include="Mono.Addins, Version=1.0.0.0, Culture=neutral, PublicKeyToken=0738eb9f132ed756">
+      <Package>mono-addins</Package>
+    </Reference>
+    <Reference Include="ICSharpCode.NRefactory, Version=5.0.0.0, Culture=neutral, PublicKeyToken=d4bfe873e7598c49">
+      <Package>monodevelop</Package>
+    </Reference>
+    <Reference Include="Mono.TextEditor, Version=1.0.0.0, Culture=neutral">
+      <Package>monodevelop</Package>
+    </Reference>
+    <Reference Include="MonoDevelop.Core, Version=2.6.0.0, Culture=neutral">
+      <Package>monodevelop</Package>
+    </Reference>
+    <Reference Include="MonoDevelop.Ide, Version=2.6.0.0, Culture=neutral">
+      <Package>monodevelop</Package>
     </Reference>
   </ItemGroup>
   <ItemGroup>
