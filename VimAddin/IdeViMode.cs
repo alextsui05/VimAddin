@@ -54,9 +54,11 @@ namespace VimAddin
 	{
 		new ExtensibleTextEditor editor;
 		TabAction tabAction;
+		MonoDevelop.Ide.Gui.Document saveableDocument;
 		
-		public IdeViMode (ExtensibleTextEditor editor)
+		public IdeViMode (ExtensibleTextEditor editor, MonoDevelop.Ide.Gui.Document doc)
 		{
+			this.saveableDocument = doc;
 			this.editor = editor;
 			tabAction = new TabAction (editor);
 		}
@@ -84,36 +86,23 @@ namespace VimAddin
 				if (2 < command.Length) { 
 					switch (command[2]) {
 					case 'q':	// :wq
-						// FIXME: Figure out how to save the file in the text editor
-#if false
-
-						var workbenchWindow = editor.View.WorkbenchWindow;
-						workbenchWindow.Document.Save ();
-						Gtk.Application.Invoke (delegate {
-							workbenchWindow.CloseWindow (false/*, true, -1*/);
-						});
-
-#endif
-						Console.WriteLine ("TODO: Save the file");
+						saveableDocument.Save ();
+						saveableDocument.Close ();
 						return "Saved and closed file.";
 					case '!':	// :w!
-						// FIXME: Figure out how to save the file in the text editor
-						//editor.View.Save ();
-						Console.WriteLine ("TODO: Save the file");
+						saveableDocument.Save ();
 						break;
 					default:
 						return base.RunExCommand (command);
 					}
 				}
-				// FIXME: Figure out how to save the file in the text editor
-				//else editor.View.WorkbenchWindow.Document.Save ();
-				else Console.WriteLine ("TODO: Save the file");
+				else saveableDocument.Save ();
 				return "Saved file.";
 				
 			case 'q':
 				bool force = false;
 				if (2 < command.Length) {
-					switch (command[2]) {
+					switch (command [2]) {
 					case '!':	// :q!
 						force = true;
 						break;
@@ -122,20 +111,7 @@ namespace VimAddin
 					}
 				}
 
-				// FIXME: Close the current file
-#if false
-
-				if (!force && editor.View.IsDirty)
-					return "Document has not been saved!";
-
-				var window = editor.View.WorkbenchWindow;
-				Gtk.Application.Invoke (delegate {
-					window.CloseWindow (force);
-				});
-
-#endif
-				Console.WriteLine("TODO: Close the current file");
-
+				saveableDocument.Close ();
 				return force? "Closed file without saving.": "Closed file.";
 				
 				
@@ -166,7 +142,6 @@ namespace VimAddin
 				}
 				break;
 			}
-			
 			return base.RunExCommand (command);
 		}
 		
