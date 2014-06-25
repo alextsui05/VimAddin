@@ -550,6 +550,15 @@ namespace VimAddin
 						Status = "g";
 						CurState = State.G;
 						return;
+					
+					case 'G':
+						if (repeatCount > 1) {
+							Caret.Line = repeatCount;
+						} else {
+							RunAction (CaretMoveActions.ToDocumentEnd);
+						}
+						Reset (string.Empty);
+						return;
 						
 					case 'H':
 						Caret.Line = System.Math.Max (DocumentLocation.MinLine, Editor.PointToLocation (0, Editor.LineHeight - 1).Line);
@@ -989,6 +998,7 @@ namespace VimAddin
 				return;
 
 			case State.G:
+
 				if (((modifier & (Gdk.ModifierType.ControlMask)) == 0)) {
 					switch ((char)unicodeKey) {
 					case 'g':
