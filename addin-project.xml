@@ -1,0 +1,7 @@
+<AddinProject appVersion="5.0">
+  <Project>
+    <AddinFile>VimAddin/bin/Release/VimAddin.dll</AddinFile>
+    <BuildFile>VimAddin.sln</BuildFile>
+    <BuildConfiguration>Release</BuildConfiguration>
+  </Project>
+</AddinProject>
