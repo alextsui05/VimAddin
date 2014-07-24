@@ -635,16 +635,13 @@ namespace VimAddin
 			case State.Delete:
 				if (IsInnerOrOuterMotionKey (unicodeKey, ref motion)) return;
 
-        if (motion != Motion.None) {
-					action = ViActionMaps.GetEditObjectCharAction((char) unicodeKey, motion);
-				}
-        else if ((modifier & (Gdk.ModifierType.ShiftMask | Gdk.ModifierType.ControlMask)) == 0 
-				     && unicodeKey == 'd' )
-				{
+				if (motion != Motion.None) {
+					action = ViActionMaps.GetEditObjectCharAction ((char)unicodeKey, motion);
+				} else if ((modifier & (Gdk.ModifierType.ShiftMask | Gdk.ModifierType.ControlMask)) == 0
+				             && unicodeKey == 'd') {
 					action = SelectionActions.LineActionFromMoveAction (CaretMoveActions.LineEnd);
 					lineAction = true;
-				} 
-        else {
+				} else {
 					action = ViActionMaps.GetNavCharAction ((char)unicodeKey);
 					if (action == null)
 						action = ViActionMaps.GetDirectionKeyAction (key, modifier);
@@ -653,32 +650,25 @@ namespace VimAddin
 				}
 				
 				if (action != null) {
-          List<Action<TextEditorData>> actions;
-					if (lineAction)   //dd or dj  -- delete lines moving downward
-          {
+					List<Action<TextEditorData>> actions;
+					if (lineAction) {   //dd or dj  -- delete lines moving downward
 						actions = GenerateRepeatedActionList (
-              action, ClipboardActions.Cut, CaretMoveActions.LineFirstNonWhitespace);
-          }
-          else if (unicodeKey == 'j')   //dj -- delete current line and line below
-          {
-            repeatCount += 1;
-            action = SelectionActions.LineActionFromMoveAction (CaretMoveActions.LineEnd);
+							action, ClipboardActions.Cut, CaretMoveActions.LineFirstNonWhitespace);
+					} else if (unicodeKey == 'j') {   //dj -- delete current line and line below
+						repeatCount += 1;
+						action = SelectionActions.LineActionFromMoveAction (CaretMoveActions.LineEnd);
 						actions = GenerateRepeatedActionList (
-              action, ClipboardActions.Cut, CaretMoveActions.LineFirstNonWhitespace);
-          }
-          else if (unicodeKey == 'k')   //dk -- delete current line and line above
-          {
-            repeatCount += 1;
+							action, ClipboardActions.Cut, CaretMoveActions.LineFirstNonWhitespace);
+					} else if (unicodeKey == 'k') {   //dk -- delete current line and line above
+						repeatCount += 1;
 						actions = GenerateRepeatedActionList (
-                CaretMoveActions.LineFirstNonWhitespace, ClipboardActions.Cut, action);
-          }
-					else
-          {
+							CaretMoveActions.LineFirstNonWhitespace, ClipboardActions.Cut, action);
+					} else {
 						actions = GenerateRepeatedActionList (action);
-            actions.Add (ClipboardActions.Cut);
-          }
+						actions.Add (ClipboardActions.Cut);
+					}
 
-          RunActions (actions.ToArray());
+					RunActions (actions.ToArray ());
 					Reset ("action deleted");
 				} else {
 					Reset ("Unrecognised motion");
@@ -1262,9 +1252,11 @@ namespace VimAddin
 
 		private string Search()
 		{
+			int next = (Caret.Offset + 1 > Document.TextLength) ?
+				Caret.Offset : Caret.Offset + 1;
 			SearchResult result = searchBackward?
 				Editor.SearchBackward (Caret.Offset):
-				Editor.SearchForward (Caret.Offset+1);
+				Editor.SearchForward (next);
 			Editor.HighlightSearchPattern = (null != result);
 			if (null == result) 
 				return string.Format ("Pattern not found: '{0}'", Editor.SearchPattern);
