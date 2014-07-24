@@ -80,6 +80,7 @@ namespace VimAddin
 		{
 			if (':' != command[0] || 2 > command.Length)
 				return base.RunExCommand (command);
+			base.CurState = State.Normal;
 
 			switch (command[1]) {
 			case 'w':

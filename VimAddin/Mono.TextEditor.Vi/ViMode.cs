@@ -41,7 +41,7 @@ namespace VimAddin
 		static string lastPattern;
 		static string lastReplacement;
 		State curState;
-		State CurState {
+		protected State CurState {
 			get {
 				return curState;
 			}
@@ -55,44 +55,42 @@ namespace VimAddin
 
 		Motion motion;
 		const string substMatch = @"^:s(?<sep>.)(?<pattern>.+?)\k<sep>(?<replacement>.*?)(\k<sep>(?<trailer>i?))?$";
+		const string SpecialMarks = "`";
 		StringBuilder commandBuffer = new StringBuilder ();
-		Dictionary<char,ViMark> marks = new Dictionary<char, ViMark>();
+		protected Dictionary<char,ViMark> marks = new Dictionary<char, ViMark>();
 		Dictionary<char,ViMacro> macros = new Dictionary<char, ViMacro>();
 		char macros_lastplayed = '@'; // start with the illegal macro character
 		string statusText = "";
 
-    /// <summary>
-    /// Number of times to perform the next action
-    /// For example 3 is the numeric prefix when "3w" is entered
-    /// <summary>
-    string numericPrefix = "";
-    /// <summary>
-    /// Number of times to perform the next action
-    /// <summary>
-    int repeatCount
-    {
-      get
-      {
-        int n;
-        int.TryParse(numericPrefix, out n);
-        return n < 1 ? 1 : n;
-      }
-      set
-      {
-        numericPrefix = value.ToString();
-      }
-    }
+		/// <summary>
+		/// Number of times to perform the next action
+		/// For example 3 is the numeric prefix when "3w" is entered
+		/// <summary>
+		string numericPrefix = "";
 
-    /// <summary>
-    /// Whether ViEditMode is in a state where it should accept a numeric prefix
-    /// <summary>
-    bool AcceptNumericPrefix
-    {
-      get {
-        return CurState == State.Normal || CurState == State.Delete || CurState == State.Change 
-          || CurState == State.Yank || CurState == State.Indent || CurState == State.Unindent;
-      }
-    }
+		/// <summary>
+		/// Number of times to perform the next action
+		/// <summary>
+		int repeatCount {
+			get {
+				int n;
+				int.TryParse (numericPrefix, out n);
+				return n < 1 ? 1 : n;
+			}
+			set {
+				numericPrefix = value.ToString ();
+			}
+		}
+
+		/// <summary>
+		/// Whether ViEditMode is in a state where it should accept a numeric prefix
+		/// <summary>
+		bool AcceptNumericPrefix {
+			get {
+				return CurState == State.Normal || CurState == State.Delete || CurState == State.Change
+				|| CurState == State.Yank || CurState == State.Indent || CurState == State.Unindent;
+			}
+		}
 		/// The macro currently being implemented. Will be set to null and checked as a flag when required.
 		/// </summary>
 		ViMacro currentMacro;
@@ -112,9 +110,12 @@ namespace VimAddin
 				}
 			}
 		}
-		
+
 		protected virtual string RunExCommand (string command)
 		{
+			// by default, return to normal state after executing a command
+			CurState = State.Normal;
+
 			switch (command[0]) {
 			case ':':
 				if (2 > command.Length)
@@ -134,7 +135,7 @@ namespace VimAddin
 					return string.Format ("Jumped to line {0}.", line);
 				}
 	
-				switch (command[1]) {
+				switch (command [1]) {
 				case 's':
 					if (2 == command.Length) {
 						if (null == lastPattern || null == lastReplacement)
@@ -145,7 +146,7 @@ namespace VimAddin
 					}
 		
 					var match = Regex.Match (command, substMatch, RegexOptions.Compiled);
-					if (!(match.Success && match.Groups["pattern"].Success && match.Groups["replacement"].Success))
+					if (!(match.Success && match.Groups ["pattern"].Success && match.Groups ["replacement"].Success))
 						break;
 		
 					return RegexReplace (match);
@@ -157,7 +158,12 @@ namespace VimAddin
 					}
 					break;	
 				}
+				if (command.Substring (1) == "test") {
+					CurState = State.Confirm;
+					return string.Format("line number: {0}", Caret.Line);
+				}
 				break;
+			// case ':'
 				
 			case '?':
 			case '/':
@@ -172,7 +178,7 @@ namespace VimAddin
 				}
 				return Search ();
 			}
-			
+
 			return "Command not recognised";
 		}
 		
@@ -289,7 +295,7 @@ namespace VimAddin
 			commandBuffer.Length = 0;
 			Status = status;
 
-      numericPrefix = "";
+		    numericPrefix = "";
 		}
 		
 		protected virtual Action<TextEditorData> GetInsertAction (Gdk.Key key, Gdk.ModifierType modifier)
@@ -298,64 +304,59 @@ namespace VimAddin
 				ViActionMaps.GetDirectionKeyAction (key, modifier);
 		}
 
-    /// Run an action multiple times if it was preceded by a numeric key
-    /// Resets numeric prefixs
-    /// <summary>
-    private void RunRepeatableAction (Action<TextEditorData> action)
-    {
-      int reps = repeatCount;   //how many times to repeat command
-      for (int i = 0 ; i < reps ; i++)
-      {
-        RunAction (action);
-      }
-      numericPrefix = "";
-    }
+		/// Run an action multiple times if it was preceded by a numeric key
+		/// Resets numeric prefixs
+		/// <summary>
+		private void RunRepeatableAction (Action<TextEditorData> action)
+		{
+			int reps = repeatCount;   //how many times to repeat command
+			for (int i = 0; i < reps; i++) {
+				RunAction (action);
+			}
+			numericPrefix = "";
+		}
 
-    /// <summary>
-    /// Run the first action multiple times if it was preceded by a numeric key
-    /// Run the following actions once each
-    /// <summary>
-    private void RunRepeatableActionChain (params Action<TextEditorData>[] actions)
-    {
-        List<Action<TextEditorData>> actionList = new List<Action<TextEditorData>>();
-        int reps = repeatCount;   //how many times to repeat command
-        for (int i = 0 ; i < reps ; i++)
-        {
-          actionList.Add(actions[0]);
-        }
-        for (int i = 1 ; i < actions.Length ; i++)
-        {
-          actionList.Add(actions[i]);
-        }
-        RunActions (actionList.ToArray());
-        numericPrefix = "";
-    }
+		/// <summary>
+		/// Run the first action multiple times if it was preceded by a numeric key
+		/// Run the following actions once each
+		/// <summary>
+		private void RunRepeatableActionChain (params Action<TextEditorData>[] actions)
+		{
+			List<Action<TextEditorData>> actionList = new List<Action<TextEditorData>> ();
+			int reps = repeatCount;   //how many times to repeat command
+			for (int i = 0; i < reps; i++) {
+				actionList.Add (actions [0]);
+			}
+			for (int i = 1; i < actions.Length; i++) {
+				actionList.Add (actions [i]);
+			}
+			RunActions (actionList.ToArray ());
+			numericPrefix = "";
+		}
 
-    /// <summary>
-    /// Repeat entire set of actions based on preceding numeric key
-    /// The first action indicates the movement that initiates the line action
-    /// The second action indicates the action to be taken on the line
-    /// The third action indicates the action to reset after completing the action on that line
-    /// <summary>
-    private List<Action<TextEditorData>> GenerateRepeatedActionList(
-        params Action<TextEditorData>[] actions)
-    {
-      List<Action<TextEditorData>> actionList = new List<Action<TextEditorData>>();
+		/// <summary>
+		/// Repeat entire set of actions based on preceding numeric key
+		/// The first action indicates the movement that initiates the line action
+		/// The second action indicates the action to be taken on the line
+		/// The third action indicates the action to reset after completing the action on that line
+		/// <summary>
+		private List<Action<TextEditorData>> GenerateRepeatedActionList (
+			params Action<TextEditorData>[] actions)
+		{
+			List<Action<TextEditorData>> actionList = new List<Action<TextEditorData>> ();
 
-      int reps = repeatCount;   //how many times to repeat command
+			int reps = repeatCount;   //how many times to repeat command
 
-      for (int i = 0 ; i < reps ; i++)
-      {
-        actionList.AddRange(actions);
-      }
+			for (int i = 0; i < reps; i++) {
+				actionList.AddRange (actions);
+			}
 
-      numericPrefix = "";
-      return actionList;
-    }
+			numericPrefix = "";
+			return actionList;
+		}
 
 		protected override void HandleKeypress (Gdk.Key key, uint unicodeKey, Gdk.ModifierType modifier)
 		{
-		
 			// Reset on Esc, Ctrl-C, Ctrl-[
 			if (key == Gdk.Key.Escape) {
 				if (currentMacro != null) {
@@ -387,12 +388,11 @@ namespace VimAddin
 			Action<TextEditorData> action = null;
 			bool lineAction = false;
 
-      //handle numeric keypress
-      if (AcceptNumericPrefix && '0' <= (char)unicodeKey && (char)unicodeKey <= '9')
-      {
-        numericPrefix += (char)unicodeKey;
-        return;
-      }
+			//handle numeric keypress
+			if (AcceptNumericPrefix && '0' <= (char)unicodeKey && (char)unicodeKey <= '9') {
+				numericPrefix += (char)unicodeKey;
+				return;
+			}
 			
 			switch (CurState) {
 			case State.Unknown:
@@ -872,7 +872,7 @@ namespace VimAddin
 				case Gdk.Key.KP_Enter:
 					Status = RunExCommand (commandBuffer.ToString ());
 					commandBuffer.Length = 0;
-					CurState = State.Normal;
+					//CurState = State.Normal;
 					break;
 				case Gdk.Key.BackSpace:
 				case Gdk.Key.Delete:
@@ -1013,7 +1013,7 @@ namespace VimAddin
 			case State.Mark: {
 				char k = (char)unicodeKey;
 				ViMark mark = null;
-				if (!char.IsLetterOrDigit(k)) {
+					if (!char.IsLetterOrDigit(k) && !SpecialMarks.Contains(k)) {
 					Reset ("Invalid Mark");
 					return;
 				}
@@ -1065,19 +1065,28 @@ namespace VimAddin
 			}
 			
 			case State.GoToMark: {
-				char k = (char)unicodeKey;
-				if (marks.ContainsKey(k)) {
-					RunAction(marks [k].LoadMark);
-					Reset ("");
-				} else {
-					Reset ("Unknown Mark");
-				}
+					char k = (char)unicodeKey;
+					if (marks.ContainsKey (k)) {
+						RunAction (marks [k].LoadMark);
+						Reset ("");
+					} else if (k == '`') {
+						// this executes once
+						ViMark special1 = new ViMark ('`', false);
+						marks ['`'] = special1;
+						RunAction (special1.SaveMark);
+						RunAction (special1.LoadMark);
+						Reset ("Set up special mark `");
+
+					} else {
+						Reset ("Unknown Mark");
+					}
 				return;
 			}
 				
 			case State.Fold:
-				if (((modifier & (Gdk.ModifierType.ControlMask)) == 0)) {
-					switch ((char)unicodeKey) {
+				{
+					if (((modifier & (Gdk.ModifierType.ControlMask)) == 0)) {
+						switch ((char)unicodeKey) {
 						case 'A':
 						// Recursive fold toggle
 							action = FoldActions.ToggleFoldRecursive;
@@ -1113,14 +1122,29 @@ namespace VimAddin
 						default:
 							Reset ("Unknown command");
 							break;
-					}
+						}
 					
-					if (null != action) {
-						RunAction (action);
-						Reset (string.Empty);
+						if (null != action) {
+							RunAction (action);
+							Reset (string.Empty);
+						}
+					}
+					return;
+				}
+
+			case State.Confirm:
+				if (((modifier & (Gdk.ModifierType.ControlMask)) == 0)) {
+					switch ((char)unicodeKey) {
+					case 'y':
+						Reset ("Yes");
+						break;
+
+					case 'n':
+						Reset ("No");
+						break;
 					}
 				}
-					
+
 				return;
 			}
 		}
@@ -1344,7 +1368,7 @@ namespace VimAddin
 			}
 		}
 
-		enum State {
+		protected enum State {
 			Unknown = 0,
 			Normal,
 			Command,
@@ -1363,7 +1387,8 @@ namespace VimAddin
 			Mark,
 			GoToMark,
 			NameMacro,
-			PlayMacro
+			PlayMacro,
+			Confirm
 		}
 	}
 

@@ -35,6 +35,7 @@ namespace VimAddin
 	{
 	
 		public char MarkCharacter {get; set;}
+		public bool Initialized { get; set; }
 		
 		/// <summary>
 		/// Only way to construct a ViMark.
@@ -43,32 +44,43 @@ namespace VimAddin
 		/// The <see cref="System.Char"/> with which the ViMark object needs to be
 		/// associated.
 		/// </param>
-		public ViMark (char markCharacter) {
-			MarkCharacter = MarkCharacter;
+		public ViMark (char markCharacter, bool initialized = true) {
+			MarkCharacter = markCharacter;
+			Initialized = initialized;
 		}
-		
+
 		public int ColumnNumber {get; protected set;}
 		
 		public void SaveMark (TextEditorData data) {
-		
 			if (base.LineSegment != null) {
 				// Remove the marker first
 				data.Document.RemoveMarker (this);
 			}
 		
 			// Is there a better way of doing this?
-			int lineNumber = data.IsSomethingSelected ? data.MainSelection.MinLine : data.Caret.Line;
+			int lineNumber = 1;
+			if (!Initialized) {
+				Initialized = true;
+			} else {
+				lineNumber = data.IsSomethingSelected ? data.MainSelection.MinLine : data.Caret.Line;
+			}
 			base.LineSegment = data.Document.GetLine (lineNumber);
 			ColumnNumber = data.Caret.Column;
 			data.Document.AddMarker(lineNumber, this);
-			
+
 			data.Document.RequestUpdate (new UpdateAll ());
 			data.Document.CommitDocumentUpdate ();
-			
 		}
 		
 		public void LoadMark (TextEditorData data) {
-			int x = base.LineSegment.LineNumber;
+			// remember where the caret currently is
+			int lineNumber = data.Caret.Line;
+			int colNumber = data.Caret.Column;
+
+			// get the line number stored with this mark
+			int x = (base.LineSegment == null)? 1 : base.LineSegment.LineNumber;
+
+			// reposition the caret on the stored line
 			data.Caret.Line = x;
 			int len = base.LineSegment.LengthIncludingDelimiter;
 			if (ColumnNumber >= len) {
@@ -76,6 +88,16 @@ namespace VimAddin
 				data.Caret.Column = len - 1;
 			} else {
 				data.Caret.Column = ColumnNumber;
+			}
+
+			if (MarkCharacter == '`') {
+				data.Document.RemoveMarker (this);
+				base.LineSegment = data.Document.GetLine(lineNumber);
+				ColumnNumber = colNumber;
+				Console.WriteLine ("Line before jump: {0}", lineNumber);
+				data.Document.AddMarker (lineNumber, this);
+				data.Document.RequestUpdate (new UpdateAll ());
+				data.Document.CommitDocumentUpdate ();
 			}
 		}
 		
