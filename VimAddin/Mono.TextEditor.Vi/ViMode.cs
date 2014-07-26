@@ -54,7 +54,7 @@ namespace VimAddin
 		}
 
 		Motion motion;
-		const string substMatch = @"^:s(?<sep>.)(?<pattern>.+?)\k<sep>(?<replacement>.*?)(\k<sep>(?<trailer>i?))?$";
+		const string substMatch = @"^:s(?<sep>.)(?<pattern>.+?)\k<sep>(?<replacement>.*?)(\k<sep>(?<trailer>[gi]+?))?$";
 		const string SpecialMarks = "`";
 		StringBuilder commandBuffer = new StringBuilder ();
 		protected Dictionary<char,ViMark> marks = new Dictionary<char, ViMark>();
@@ -1184,15 +1184,27 @@ namespace VimAddin
 
 			// Set regex options
 			RegexOptions options = RegexOptions.Multiline;
-			if (match.Groups["trailer"].Success && "i" == match.Groups["trailer"].Value)
-				options |= RegexOptions.IgnoreCase;
+			if (match.Groups ["trailer"].Success) {
+				if (match.Groups ["trailer"].Value.Contains ("i")) {
+					options |= RegexOptions.IgnoreCase;
+				}
+			}
 
 			// Mogrify group backreferences to .net-style references
 			string replacement = Regex.Replace (match.Groups["replacement"].Value, @"\\([0-9]+)", "$$$1", RegexOptions.Compiled);
 			replacement = Regex.Replace (replacement, "&", "$$0", RegexOptions.Compiled);
 
 			try {
-				string newline = Regex.Replace (line, match.Groups["pattern"].Value, replacement, options);
+				string newline = "";
+				if (match.Groups ["trailer"].Success && match.Groups["trailer"].Value.Contains("g"))
+				{
+					newline = Regex.Replace (line, match.Groups["pattern"].Value, replacement, options);
+				}
+				else
+				{
+					Regex regex = new Regex(match.Groups["pattern"].Value, options);
+					newline = regex.Replace(line, replacement, 1);
+				}
 				Data.Replace (segment.Offset, line.Length, newline);
 				if (Data.IsSomethingSelected)
 					Data.ClearSelection ();
