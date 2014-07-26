@@ -63,6 +63,15 @@ namespace VimAddin
 			tabAction = new TabAction (editor);
 		}
 
+		protected override void OnAddedToEditor (TextEditorData data)
+		{
+			base.OnAddedToEditor (data);
+
+			ViMark special1 = new ViMark ('`', false);
+			marks ['`'] = special1;
+			special1.SaveMark (data);
+		}
+
 		protected override Action<TextEditorData> GetInsertAction (Gdk.Key key, Gdk.ModifierType modifier)
 		{
 			if (modifier == Gdk.ModifierType.None) {
@@ -145,7 +154,7 @@ namespace VimAddin
 			}
 			return base.RunExCommand (command);
 		}
-		
+
 		protected override void HandleKeypress (Gdk.Key key, uint unicodeKey, Gdk.ModifierType modifier)
 		{
 			if (0 != (Gdk.ModifierType.ControlMask & modifier)) {
@@ -157,7 +166,7 @@ namespace VimAddin
 					return;
 				}
 			}// ctrl+key		
-			
+
 			base.HandleKeypress (key, unicodeKey, modifier);
 		}
 	}

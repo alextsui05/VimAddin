@@ -153,7 +153,8 @@ namespace VimAddin
 					
 				case '$':
 					if (command.Length == 2) {
-						RunAction (CaretMoveActions.ToDocumentEnd);
+						//RunAction (CaretMoveActions.ToDocumentEnd);
+						RunAction (ToDocumentEnd);
 						return "Jumped to end of document.";
 					}
 					break;	
@@ -197,6 +198,16 @@ namespace VimAddin
 			Editor.SearchEngine.SearchRequest.CaseSensitive = true;
 			searchBackward = false;
 			Search ();
+		}
+
+		void ToDocumentEnd(TextEditorData data)
+		{
+//			if (data.Document.TextLength > 1) {
+//				data.Caret.Offset = data.Document.TextLength - 1;
+//			}
+			if (data.Document.LineCount > 1) {
+				data.Caret.Line = data.Document.LineCount - 1;
+			}
 		}
 		
 		public override bool WantsToPreemptIM {
@@ -552,10 +563,12 @@ namespace VimAddin
 						return;
 					
 					case 'G':
+						RunAction (marks ['`'].SaveMark);
 						if (repeatCount > 1) {
 							Caret.Line = repeatCount;
 						} else {
-							RunAction (CaretMoveActions.ToDocumentEnd);
+							//RunAction (CaretMoveActions.ToDocumentEnd);
+							RunAction (ToDocumentEnd);
 						}
 						Reset (string.Empty);
 						return;
@@ -992,6 +1005,7 @@ namespace VimAddin
 				if (((modifier & (Gdk.ModifierType.ControlMask)) == 0)) {
 					switch ((char)unicodeKey) {
 					case 'g':
+						RunAction (marks ['`'].SaveMark);
 						Caret.Offset = 0;
 						Reset ("");
 						return;
@@ -1057,16 +1071,11 @@ namespace VimAddin
 			case State.GoToMark: {
 					char k = (char)unicodeKey;
 					if (marks.ContainsKey (k)) {
+						if (k != '`') {
+							RunAction (marks ['`'].SaveMark);
+						}
 						RunAction (marks [k].LoadMark);
 						Reset ("");
-					} else if (k == '`') {
-						// this executes once
-						ViMark special1 = new ViMark ('`', false);
-						marks ['`'] = special1;
-						RunAction (special1.SaveMark);
-						RunAction (special1.LoadMark);
-						Reset ("Set up special mark `");
-
 					} else {
 						Reset ("Unknown Mark");
 					}
@@ -1258,9 +1267,12 @@ namespace VimAddin
 				Editor.SearchBackward (Caret.Offset):
 				Editor.SearchForward (next);
 			Editor.HighlightSearchPattern = (null != result);
-			if (null == result) 
+			if (null == result)
 				return string.Format ("Pattern not found: '{0}'", Editor.SearchPattern);
-			else Caret.Offset = result.Offset;
+			else {
+				RunAction (marks ['`'].SaveMark);
+				Caret.Offset = result.Offset;
+			}
 		
 			return string.Empty;
 		}
