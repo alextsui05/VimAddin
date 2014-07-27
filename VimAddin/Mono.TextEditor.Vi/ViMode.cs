@@ -649,14 +649,23 @@ namespace VimAddin
 				return;
 				
 			case State.Delete:
-				if (IsInnerOrOuterMotionKey (unicodeKey, ref motion)) return;
+				if (IsInnerOrOuterMotionKey (unicodeKey, ref motion))
+					return;
+				int offsetz = Caret.Offset;
 
 				if (motion != Motion.None) {
 					action = ViActionMaps.GetEditObjectCharAction ((char)unicodeKey, motion);
-				} else if ((modifier & (Gdk.ModifierType.ShiftMask | Gdk.ModifierType.ControlMask)) == 0
-				             && unicodeKey == 'd') {
-					action = SelectionActions.LineActionFromMoveAction (CaretMoveActions.LineEnd);
-					lineAction = true;
+				} else if (((modifier & (Gdk.ModifierType.ShiftMask | Gdk.ModifierType.ControlMask)) == 0
+				          && (unicodeKey == 'd' || unicodeKey == 'j' || unicodeKey == 'k'))) {
+					if (unicodeKey == 'k') {
+						action = CaretMoveActions.Up;
+					} else {
+						action = CaretMoveActions.Down;
+					}
+					if (unicodeKey == 'j') {
+						repeatCount += 1;
+					} //get one extra line for yj
+					lineAction	= true;
 				} else {
 					action = ViActionMaps.GetNavCharAction ((char)unicodeKey);
 					if (action == null)
@@ -664,47 +673,47 @@ namespace VimAddin
 					if (action != null)
 						action = SelectionActions.FromMoveAction (action);
 				}
-				
-				if (action != null) {
-					List<Action<TextEditorData>> actions;
-					if (lineAction) {   //dd or dj  -- delete lines moving downward
-						actions = GenerateRepeatedActionList (
-							action, ClipboardActions.Cut, CaretMoveActions.LineFirstNonWhitespace);
-					} else if (unicodeKey == 'j') {   //dj -- delete current line and line below
-						repeatCount += 1;
-						action = SelectionActions.LineActionFromMoveAction (CaretMoveActions.LineEnd);
-						actions = GenerateRepeatedActionList (
-							action, ClipboardActions.Cut, CaretMoveActions.LineFirstNonWhitespace);
-					} else if (unicodeKey == 'k') {   //dk -- delete current line and line above
-						repeatCount += 1;
-						actions = GenerateRepeatedActionList (
-							CaretMoveActions.LineFirstNonWhitespace, ClipboardActions.Cut, action);
-					} else {
-						actions = GenerateRepeatedActionList (action);
-						actions.Add (ClipboardActions.Cut);
-					}
 
-					RunActions (actions.ToArray ());
-					Reset ("action deleted");
+				if (action != null) {
+					if (lineAction) {
+						RunAction (CaretMoveActions.LineStart);
+						SelectionActions.StartSelection (Data);
+						for (int i = 0; i < repeatCount; i++) {
+							RunAction (action);
+						}
+						SelectionActions.EndSelection (Data);
+						numericPrefix = "";
+					} else {
+						RunRepeatableAction (action);
+					}
+					if (Data.IsSomethingSelected && !lineAction)
+						offsetz = Data.SelectionRange.Offset;
+					RunAction (ClipboardActions.Cut);
+					Reset (string.Empty);
 				} else {
 					Reset ("Unrecognised motion");
 				}
-				
+				Caret.Offset = offsetz;
+
 				return;
 
 			case State.Yank:
-				if (IsInnerOrOuterMotionKey (unicodeKey, ref motion)) return;
+				if (IsInnerOrOuterMotionKey (unicodeKey, ref motion))
+					return;
 				int offset = Caret.Offset;
 
 				if (motion != Motion.None) {
-					action = ViActionMaps.GetEditObjectCharAction((char) unicodeKey, motion);
-				}
-				else if (((modifier & (Gdk.ModifierType.ShiftMask | Gdk.ModifierType.ControlMask)) == 0
-				     && (unicodeKey == 'y' || unicodeKey == 'j' || unicodeKey == 'k')))
-				{
-          if (unicodeKey == 'k') { action = CaretMoveActions.Up; } 
-          else { action = CaretMoveActions.Down; }
-          if (unicodeKey == 'j') { repeatCount += 1; } //get one extra line for yj
+					action = ViActionMaps.GetEditObjectCharAction ((char)unicodeKey, motion);
+				} else if (((modifier & (Gdk.ModifierType.ShiftMask | Gdk.ModifierType.ControlMask)) == 0
+				         && (unicodeKey == 'y' || unicodeKey == 'j' || unicodeKey == 'k'))) {
+					if (unicodeKey == 'k') {
+						action = CaretMoveActions.Up;
+					} else {
+						action = CaretMoveActions.Down;
+					}
+					if (unicodeKey == 'j') {
+						repeatCount += 1;
+					} //get one extra line for yj
 					lineAction	= true;
 				} else {
 					action = ViActionMaps.GetNavCharAction ((char)unicodeKey);
@@ -715,23 +724,19 @@ namespace VimAddin
 				}
 				
 				if (action != null) {
-          if (lineAction)
-          {
-            RunAction (CaretMoveActions.LineStart);
-            SelectionActions.StartSelection(Data);
-            for (int i = 0 ; i < repeatCount ; i++)
-            {
-              RunAction(action);
-            }
-            SelectionActions.EndSelection(Data);
-            numericPrefix = "";
-          }
-          else
-          {
-            RunRepeatableAction (action);
-          }
-          if (Data.IsSomethingSelected && !lineAction)
-            offset = Data.SelectionRange.Offset;
+					if (lineAction) {
+						RunAction (CaretMoveActions.LineStart);
+						SelectionActions.StartSelection (Data);
+						for (int i = 0; i < repeatCount; i++) {
+							RunAction (action);
+						}
+						SelectionActions.EndSelection (Data);
+						numericPrefix = "";
+					} else {
+						RunRepeatableAction (action);
+					}
+					if (Data.IsSomethingSelected && !lineAction)
+						offset = Data.SelectionRange.Offset;
 					RunAction (ClipboardActions.Copy);
 					Reset (string.Empty);
 				} else {
