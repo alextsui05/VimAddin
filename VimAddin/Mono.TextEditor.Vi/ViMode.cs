@@ -183,7 +183,7 @@ namespace VimAddin
 			return "Command not recognised";
 		}
 		
-		void SearchWordAtCaret ()
+		void SearchWordAtCaret (bool backward)
 		{
 			Editor.SearchEngine = new RegexSearchEngine ();
 			var s = Data.FindCurrentWordStart (Data.Caret.Offset);
@@ -196,7 +196,7 @@ namespace VimAddin
 			word = "(?<!\\w)" + System.Text.RegularExpressions.Regex.Escape (word) + "(?!\\w)";
 			Editor.SearchPattern = word;
 			Editor.SearchEngine.SearchRequest.CaseSensitive = true;
-			searchBackward = false;
+			searchBackward = backward;
 			Search ();
 		}
 
@@ -626,7 +626,10 @@ namespace VimAddin
 						Reset("Macro Recorded");
 						return;
 					case '*':
-						SearchWordAtCaret ();
+						SearchWordAtCaret (backward: false);
+						return;
+					case '#':
+						SearchWordAtCaret (backward: true);
 						return;
 					}
 					
