@@ -35,8 +35,29 @@ using Mono.TextEditor;
 
 namespace VimAddin
 {
+	/**
+	Represent a keystroke that produces input in the text document e.g. characters, newlines, tabs.
+	*/
+	public struct Keystroke
+	{
+		private Gdk.Key m_key;
+		public Gdk.Key Key { get { return m_key; } }
+		private uint m_unicodeKey; 
+		public uint UnicodeKey { get { return m_unicodeKey; } }
+		private Gdk.ModifierType m_modifier;
+		public Gdk.ModifierType Modifier { get { return m_modifier; } }
+		public Keystroke(Gdk.Key key, uint unicodeKey, Gdk.ModifierType modifier)
+		{
+			m_key = key;
+			m_unicodeKey = unicodeKey;
+			m_modifier = modifier;
+		}
+	}
+
 	public class ViEditMode : Mono.TextEditor.EditMode
 	{
+		// State variable indicates that we have started recording actions into LastAction
+		bool lastActionStarted;
 		bool searchBackward;
 		static string lastPattern;
 		static string lastReplacement;
@@ -52,6 +73,7 @@ namespace VimAddin
 				}
 			}
 		}
+		protected State PrevState { get; set; }
 
 		Motion motion;
 		const string substMatch = @"^:s(?<sep>.)(?<pattern>.+?)\k<sep>(?<replacement>.*?)(\k<sep>(?<trailer>[gi]+?))?$";
@@ -61,6 +83,17 @@ namespace VimAddin
 		Dictionary<char,ViMacro> macros = new Dictionary<char, ViMacro>();
 		char macros_lastplayed = '@'; // start with the illegal macro character
 		string statusText = "";
+		List<Action<TextEditorData>> LastAction = new List<Action<TextEditorData>>();
+
+		/**
+		Cache keystroke sequence from last insert operation.
+		*/
+		List<Keystroke> LastInsert = new List<Keystroke>();
+
+		/**
+		Cache keystrokes during insert operation that produce insert keys.
+		*/
+		List<Keystroke> InsertBuffer = new List<Keystroke>();
 
 		/// <summary>
 		/// Number of times to perform the next action
@@ -200,6 +233,13 @@ namespace VimAddin
 			Search ();
 		}
 
+		void RepeatLastAction()
+		{
+			foreach (Action<TextEditorData> action in LastAction) {
+				RunAction (action);
+			}
+		}
+
 		void ToDocumentEnd(TextEditorData data)
 		{
 //			if (data.Document.TextLength > 1) {
@@ -300,6 +340,8 @@ namespace VimAddin
 		
 		void Reset (string status)
 		{
+			lastActionStarted = false;
+			PrevState = State.Normal;
 			CurState = State.Normal;
 			ResetEditorState (Data);
 			
@@ -361,9 +403,25 @@ namespace VimAddin
 			for (int i = 0; i < reps; i++) {
 				actionList.AddRange (actions);
 			}
-
 			numericPrefix = "";
 			return actionList;
+		}
+
+		private void RepeatLastInsert(TextEditorData data)
+		{
+			CurState = State.Insert;
+			Caret.Mode = CaretMode.Insert;
+			foreach (Keystroke ks in LastInsert) {
+				// TODO: Handle full keystroke
+				Action<TextEditorData> action = ViActionMaps.GetInsertKeyAction (ks.Key, ks.Modifier);
+				if (action != null) {
+					RunAction (action);
+				} else {
+					InsertCharacter (ks.UnicodeKey);
+				}
+			}
+			Caret.Mode = CaretMode.Block;
+			Reset ("");
 		}
 
 		protected override void HandleKeypress (Gdk.Key key, uint unicodeKey, Gdk.ModifierType modifier)
@@ -377,6 +435,22 @@ namespace VimAddin
 					toAdd.Modifiers = modifier;
 					toAdd.UnicodeKey = unicodeKey;
 					currentMacro.KeysPressed.Enqueue(toAdd);
+				}
+
+				if (PrevState == State.Change && CurState == State.Insert) {
+					LastInsert.Clear ();
+					LastInsert.AddRange(InsertBuffer);
+					InsertBuffer.Clear ();
+					LastAction.Add (RepeatLastInsert);
+				} else if (CurState == State.Insert) {
+					LastInsert.Clear ();
+					LastInsert.AddRange(InsertBuffer);
+					InsertBuffer.Clear ();
+					if (!lastActionStarted) {
+						lastActionStarted = true;
+						LastAction.Clear ();
+					}
+					LastAction.Add (RepeatLastInsert);
 				}
 				Reset(string.Empty);
 				return;
@@ -423,6 +497,9 @@ namespace VimAddin
 						return;
 					
 					case 'A':
+						lastActionStarted = true;
+						LastAction.Clear ();
+						LastAction.Add(CaretMoveActions.LineEnd);
 						RunAction (CaretMoveActions.LineEnd);
 						goto case 'i';
 						
@@ -431,9 +508,14 @@ namespace VimAddin
 						goto case 'i';
 					
 					case 'a':
+						// TODO: Throw this into a helper function
+						lastActionStarted = true;
+						LastAction.Clear ();
+						LastAction.Add (CaretMoveActions.Right);
 						//use CaretMoveActions so that we can move past last character on line end
 						RunAction (CaretMoveActions.Right);
 						goto case 'i';
+
 					case 'i':
 						Caret.Mode = CaretMode.Insert;
 						Status = "-- INSERT --";
@@ -631,6 +713,9 @@ namespace VimAddin
 					case '#':
 						SearchWordAtCaret (backward: true);
 						return;
+					case '.':
+						RepeatLastAction ();
+						return;
 					}
 					
 				}
@@ -747,15 +832,18 @@ namespace VimAddin
 				return;
 				
 			case State.Change:
-				if (IsInnerOrOuterMotionKey (unicodeKey, ref motion)) return;
+				if (IsInnerOrOuterMotionKey (unicodeKey, ref motion))
+					return;
+
+				lastActionStarted = true;
+				LastAction.Clear ();
 
 				if (motion != Motion.None) {
-					action = ViActionMaps.GetEditObjectCharAction((char) unicodeKey, motion);
+					action = ViActionMaps.GetEditObjectCharAction ((char)unicodeKey, motion);
 				}
 				//copied from delete action
-				else if (((modifier & (Gdk.ModifierType.ShiftMask | Gdk.ModifierType.ControlMask)) == 0 
-				     && unicodeKey == 'c'))
-				{
+				else if (((modifier & (Gdk.ModifierType.ShiftMask | Gdk.ModifierType.ControlMask)) == 0
+				         && unicodeKey == 'c')) {
 					action = SelectionActions.LineActionFromMoveAction (CaretMoveActions.LineEnd);
 					lineAction = true;
 				} else {
@@ -767,35 +855,30 @@ namespace VimAddin
 				}
 				
 				if (action != null) {
-          List<Action<TextEditorData>> actions;
-					if (lineAction)   //cd or cj  -- delete lines moving downward
-          {
+					List<Action<TextEditorData>> actions;
+					if (lineAction) {   //cd or cj  -- delete lines moving downward
 						actions = GenerateRepeatedActionList (
-              action, ClipboardActions.Cut, CaretMoveActions.LineFirstNonWhitespace);
-            actions.Add (ViActions.NewLineAbove);
-          }
-          else if (unicodeKey == 'j')   //cj -- delete current line and line below
-          {
-            repeatCount += 1;
-            action = SelectionActions.LineActionFromMoveAction (CaretMoveActions.LineEnd);
+							action, ClipboardActions.Cut, CaretMoveActions.LineFirstNonWhitespace);
+						actions.Add (ViActions.NewLineAbove);
+					} else if (unicodeKey == 'j') {   //cj -- delete current line and line below
+						repeatCount += 1;
+						action = SelectionActions.LineActionFromMoveAction (CaretMoveActions.LineEnd);
 						actions = GenerateRepeatedActionList (
-              action, ClipboardActions.Cut, CaretMoveActions.LineFirstNonWhitespace);
-            actions.Add (ViActions.NewLineAbove);
-          }
-          else if (unicodeKey == 'k')   //ck -- delete current line and line above
-          {
-            repeatCount += 1;
+							action, ClipboardActions.Cut, CaretMoveActions.LineFirstNonWhitespace);
+						actions.Add (ViActions.NewLineAbove);
+					} else if (unicodeKey == 'k') {   //ck -- delete current line and line above
+						repeatCount += 1;
 						actions = GenerateRepeatedActionList (
-                CaretMoveActions.LineFirstNonWhitespace, ClipboardActions.Cut, action);
-            actions.Add (ViActions.NewLineBelow);
-          }
-					else
-          {
+							CaretMoveActions.LineFirstNonWhitespace, ClipboardActions.Cut, action);
+						actions.Add (ViActions.NewLineBelow);
+					} else {
 						actions = GenerateRepeatedActionList (action);
-            actions.Add (ClipboardActions.Cut);
-          }
-          RunActions (actions.ToArray());
+						actions.Add (ClipboardActions.Cut);
+					}
+					RunActions (actions.ToArray ());
+					LastAction.AddRange (actions);
 					Status = "-- INSERT --";
+					PrevState = State.Change;
 					CurState = State.Insert;
 					Caret.Mode = CaretMode.Insert;
 				} else {
@@ -806,13 +889,28 @@ namespace VimAddin
 				
 			case State.Insert:
 			case State.Replace:
-				action = GetInsertAction (key, modifier);
-				
-				if (action != null)
+				action = ViActionMaps.GetInsertKeyAction (key, modifier);
+
+				// Record InsertKeyActions
+				if (action != null) {
 					RunAction (action);
-				else if (unicodeKey != 0)
+					InsertBuffer.Add (new Keystroke (key, unicodeKey, modifier));
+					return;
+				}
+
+				// Clear InsertBuffer if DirectionKeyAction
+				action = ViActionMaps.GetDirectionKeyAction (key, modifier);
+				if (action != null) {
+					RunAction (action);
+					InsertBuffer.Clear ();
+					return;
+				}
+
+				if (unicodeKey != 0) {
 					InsertCharacter (unicodeKey);
-				
+					InsertBuffer.Add (new Keystroke (key, unicodeKey, modifier));
+				}
+
 				return;
 
 			case State.VisualLine:
