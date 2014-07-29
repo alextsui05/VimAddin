@@ -357,6 +357,13 @@ namespace VimAddin
 				ViActionMaps.GetDirectionKeyAction (key, modifier);
 		}
 
+		private void StartNewLastAction(Action<TextEditorData> action)
+		{
+			lastActionStarted = true;
+			LastAction.Clear ();
+			LastAction.Add (action);
+		}
+
 		/// Run an action multiple times if it was preceded by a numeric key
 		/// Resets numeric prefixs
 		/// <summary>
@@ -497,21 +504,17 @@ namespace VimAddin
 						return;
 					
 					case 'A':
-						lastActionStarted = true;
-						LastAction.Clear ();
-						LastAction.Add(CaretMoveActions.LineEnd);
+						StartNewLastAction (CaretMoveActions.LineEnd);
 						RunAction (CaretMoveActions.LineEnd);
 						goto case 'i';
 						
 					case 'I':
+						StartNewLastAction (CaretMoveActions.LineFirstNonWhitespace);
 						RunAction (CaretMoveActions.LineFirstNonWhitespace);
 						goto case 'i';
 					
 					case 'a':
-						// TODO: Throw this into a helper function
-						lastActionStarted = true;
-						LastAction.Clear ();
-						LastAction.Add (CaretMoveActions.Right);
+						StartNewLastAction (CaretMoveActions.Right);
 						//use CaretMoveActions so that we can move past last character on line end
 						RunAction (CaretMoveActions.Right);
 						goto case 'i';
@@ -556,10 +559,12 @@ namespace VimAddin
 						return;
 						
 					case 'O':
+						StartNewLastAction (ViActions.NewLineAbove);
 						RunAction (ViActions.NewLineAbove);
 						goto case 'i';
 						
 					case 'o':
+						StartNewLastAction (ViActions.NewLineBelow);
 						RunAction (ViActions.NewLineBelow);
 						goto case 'i';
 						
