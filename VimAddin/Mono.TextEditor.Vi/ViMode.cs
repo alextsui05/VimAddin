@@ -1020,69 +1020,81 @@ namespace VimAddin
 				return;
 				
 			case State.Indent:
-				if (((modifier & (Gdk.ModifierType.ControlMask)) == 0 && unicodeKey == '>'))
-				{ //select current line to indent
-          List<Action<TextEditorData>> actions = new List<Action<TextEditorData>>();
-          RunAction (CaretMoveActions.LineFirstNonWhitespace);
-					int roffset = Data.SelectionRange.Offset;
-          actions.Add (SelectionActions.FromMoveAction(CaretMoveActions.LineEnd));
-          for (int i = 1 ; i < repeatCount ; i++)
-          {
-            actions.Add (SelectionActions.FromMoveAction (ViActions.Down));
-          }
-          actions.Add (MiscActions.IndentSelection);
-          RunActions (actions.ToArray());
-          //set cursor to start of first line indented
-          Caret.Offset = roffset;
-          RunAction (CaretMoveActions.LineFirstNonWhitespace);
-              
-					Reset ("");
+				if (((modifier & (Gdk.ModifierType.ControlMask)) == 0 && unicodeKey == '>')) { //select current line to indent
+					var linesToIndent = repeatCount;
+					Action<TextEditorData> indentAction = delegate(TextEditorData data) {
+						List<Action<TextEditorData>> actions = new List<Action<TextEditorData>> ();
+						RunAction (CaretMoveActions.LineFirstNonWhitespace);
+						int roffset = Data.SelectionRange.Offset;
+						actions.Add (SelectionActions.FromMoveAction (CaretMoveActions.LineEnd));
+						for (int i = 1; i < linesToIndent; i++) {
+							actions.Add (SelectionActions.FromMoveAction (ViActions.Down));
+						}
+						actions.Add (MiscActions.IndentSelection);
+						RunActions (actions.ToArray ());
+						//set cursor to start of first line indented
+						Caret.Offset = roffset;
+						RunAction (CaretMoveActions.LineFirstNonWhitespace);
+	              
+						Reset ("");
+					};
+					StartNewLastAction (indentAction);
+					RunAction (indentAction);
 					return;
 				}
 				
 				action = ViActionMaps.GetNavCharAction ((char)unicodeKey);
 				if (action == null)
 					action = ViActionMaps.GetDirectionKeyAction (key, modifier);
-				
+
 				if (action != null) {
-          List<Action<TextEditorData>> actions = new List<Action<TextEditorData>>();
-          //get away from LineBegin
-          RunAction (CaretMoveActions.LineFirstNonWhitespace);
-					int roffset = Data.SelectionRange.Offset;
-          actions.Add (ViActions.Right);
-          for (int i = 0 ; i < repeatCount ; i++)
-          {
-            actions.Add (SelectionActions.FromMoveAction (action));
-          }
-          actions.Add (MiscActions.IndentSelection);
-          RunActions (actions.ToArray());
-          //set cursor to start of first line indented
-          Caret.Offset = roffset;
-          RunAction (CaretMoveActions.LineFirstNonWhitespace);
-					Reset ("");
+					// TODO: Stuff this into a delegate and go 
+					var linesToIndent = repeatCount;
+					Action<TextEditorData> indentAction = delegate(TextEditorData data) {
+						List<Action<TextEditorData>> actions = new List<Action<TextEditorData>> ();
+						//get away from LineBegin
+						RunAction (CaretMoveActions.LineFirstNonWhitespace);
+						int roffset = Data.SelectionRange.Offset;
+						actions.Add (ViActions.Right);
+						for (int i = 0; i < linesToIndent; i++) {
+							actions.Add (SelectionActions.FromMoveAction (action));
+						}
+						actions.Add (MiscActions.IndentSelection);
+						RunActions (actions.ToArray ());
+						//set cursor to start of first line indented
+						Caret.Offset = roffset;
+						RunAction (CaretMoveActions.LineFirstNonWhitespace);
+						Reset ("");
+					};
+					StartNewLastAction (indentAction);
+					RunAction (indentAction);
 				} else {
 					Reset ("Unrecognised motion");
 				}
 				return;
 				
 			case State.Unindent:
-				if (((modifier & (Gdk.ModifierType.ControlMask)) == 0 && ((char)unicodeKey) == '<'))
-				{ //select current line to indent
-          List<Action<TextEditorData>> actions = new List<Action<TextEditorData>>();
-          RunAction (CaretMoveActions.LineFirstNonWhitespace);
-					int roffset = Data.SelectionRange.Offset; //save caret position
-          actions.Add (SelectionActions.FromMoveAction(CaretMoveActions.LineEnd));
-          for (int i = 1 ; i < repeatCount ; i++)
-          {
-            actions.Add (SelectionActions.FromMoveAction (ViActions.Down));
-          }
-          actions.Add (MiscActions.RemoveIndentSelection);
-          RunActions (actions.ToArray());
-          //set cursor to start of first line indented
-          Caret.Offset = roffset;
-          RunAction (CaretMoveActions.LineFirstNonWhitespace);
-              
-					Reset ("");
+				if (((modifier & (Gdk.ModifierType.ControlMask)) == 0 && ((char)unicodeKey) == '<')) { //select current line to indent
+					// TODO: Stuff this into a delegate and go
+					var linesToUnindent = repeatCount;
+					Action<TextEditorData> unindentAction = delegate(TextEditorData data) {
+						List<Action<TextEditorData>> actions = new List<Action<TextEditorData>> ();
+						RunAction (CaretMoveActions.LineFirstNonWhitespace);
+						int roffset = Data.SelectionRange.Offset; //save caret position
+						actions.Add (SelectionActions.FromMoveAction (CaretMoveActions.LineEnd));
+						for (int i = 1; i < linesToUnindent; i++) {
+							actions.Add (SelectionActions.FromMoveAction (ViActions.Down));
+						}
+						actions.Add (MiscActions.RemoveIndentSelection);
+						RunActions (actions.ToArray ());
+						//set cursor to start of first line indented
+						Caret.Offset = roffset;
+						RunAction (CaretMoveActions.LineFirstNonWhitespace);
+	              
+						Reset ("");
+					};
+					StartNewLastAction (unindentAction);
+					RunAction (unindentAction);
 					return;
 				}
 				
@@ -1091,21 +1103,26 @@ namespace VimAddin
 					action = ViActionMaps.GetDirectionKeyAction (key, modifier);
 				
 				if (action != null) {
-          List<Action<TextEditorData>> actions = new List<Action<TextEditorData>>();
-          RunAction (CaretMoveActions.LineFirstNonWhitespace);
-					int roffset = Data.SelectionRange.Offset;
-          //get away from LineBegin
-          actions.Add (ViActions.Right);
-          for (int i = 0 ; i < repeatCount ; i++)
-          {
-            actions.Add (SelectionActions.FromMoveAction (action));
-          }
-          actions.Add (MiscActions.RemoveIndentSelection);
-          RunActions (actions.ToArray());
-          //set cursor to start of first line indented
-          Caret.Offset = roffset;
-          RunAction (CaretMoveActions.LineFirstNonWhitespace);
-					Reset ("");
+					// TODO: Stuff this into a delegate and go
+					var linesToUnindent = repeatCount;
+					Action<TextEditorData> unindentAction = delegate(TextEditorData data) {
+						List<Action<TextEditorData>> actions = new List<Action<TextEditorData>> ();
+						RunAction (CaretMoveActions.LineFirstNonWhitespace);
+						int roffset = Data.SelectionRange.Offset;
+						//get away from LineBegin
+						actions.Add (ViActions.Right);
+						for (int i = 0; i < linesToUnindent; i++) {
+							actions.Add (SelectionActions.FromMoveAction (action));
+						}
+						actions.Add (MiscActions.RemoveIndentSelection);
+						RunActions (actions.ToArray ());
+						//set cursor to start of first line indented
+						Caret.Offset = roffset;
+						RunAction (CaretMoveActions.LineFirstNonWhitespace);
+						Reset ("");
+					};
+					StartNewLastAction (unindentAction);
+					RunAction (unindentAction);
 				} else {
 					Reset ("Unrecognised motion");
 				}
