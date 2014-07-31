@@ -194,7 +194,12 @@ namespace VimAddin
 				}
 				if (command.Substring (1) == "test") {
 					CurState = State.Confirm;
-					return string.Format("line number: {0}", Caret.Line);
+					var selection = Data.SelectionRange;
+					int lineStart, lineEnd;
+					MiscActions.GetSelectedLines (Data, out lineStart, out lineEnd);
+
+					//return string.Format("line range: {0} {1}", lineStart, lineEnd);
+					return string.Format("line range: {0} {1}", selection.Offset, selection.Length);
 				}
 				break;
 			// case ':'
@@ -240,11 +245,60 @@ namespace VimAddin
 			}
 		}
 
-		void ToDocumentEnd(TextEditorData data)
+		/**
+		Indent specified number of lines from the current caret position.
+		*/
+		protected Action<TextEditorData> MakeIndentAction(int lines)
 		{
-//			if (data.Document.TextLength > 1) {
-//				data.Caret.Offset = data.Document.TextLength - 1;
-//			}
+			var linesToIndent = lines;
+			Action<TextEditorData> indentAction = delegate(TextEditorData data) {
+				// programmatically generate a text selection
+				List<Action<TextEditorData>> actions = new List<Action<TextEditorData>> ();
+				RunAction (CaretMoveActions.LineFirstNonWhitespace);
+				int roffset = Data.SelectionRange.Offset;
+				actions.Add (SelectionActions.FromMoveAction (CaretMoveActions.LineEnd));
+				for (int i = 1; i < linesToIndent; i++) {
+					actions.Add (SelectionActions.FromMoveAction (ViActions.Down));
+				}
+				// then indent it
+				actions.Add (MiscActions.IndentSelection);
+				RunActions (actions.ToArray ());
+				//set cursor to start of first line indented
+				Caret.Offset = roffset;
+				RunAction (CaretMoveActions.LineFirstNonWhitespace);
+
+				Reset ("");
+			};
+			return indentAction;
+		}
+
+		/**
+		Unindent specified number of lines from the current caret position.
+		*/
+		public Action<TextEditorData> MakeUnindentAction(int lines)
+		{
+			var linesToUnindent = lines;
+			Action<TextEditorData> unindentAction = delegate(TextEditorData data) {
+				List<Action<TextEditorData>> actions = new List<Action<TextEditorData>> ();
+				RunAction (CaretMoveActions.LineFirstNonWhitespace);
+				int roffset = Data.SelectionRange.Offset; //save caret position
+				actions.Add (SelectionActions.FromMoveAction (CaretMoveActions.LineEnd));
+				for (int i = 1; i < linesToUnindent; i++) {
+					actions.Add (SelectionActions.FromMoveAction (ViActions.Down));
+				}
+				actions.Add (MiscActions.RemoveIndentSelection);
+				RunActions (actions.ToArray ());
+				//set cursor to start of first line indented
+				Caret.Offset = roffset;
+				RunAction (CaretMoveActions.LineFirstNonWhitespace);
+
+				Reset ("");
+			};
+			return unindentAction;
+		}
+
+		protected void ToDocumentEnd(TextEditorData data)
+		{
 			if (data.Document.LineCount > 1) {
 				data.Caret.Line = data.Document.LineCount - 1;
 			}
@@ -1021,23 +1075,7 @@ namespace VimAddin
 				
 			case State.Indent:
 				if (((modifier & (Gdk.ModifierType.ControlMask)) == 0 && unicodeKey == '>')) { //select current line to indent
-					var linesToIndent = repeatCount;
-					Action<TextEditorData> indentAction = delegate(TextEditorData data) {
-						List<Action<TextEditorData>> actions = new List<Action<TextEditorData>> ();
-						RunAction (CaretMoveActions.LineFirstNonWhitespace);
-						int roffset = Data.SelectionRange.Offset;
-						actions.Add (SelectionActions.FromMoveAction (CaretMoveActions.LineEnd));
-						for (int i = 1; i < linesToIndent; i++) {
-							actions.Add (SelectionActions.FromMoveAction (ViActions.Down));
-						}
-						actions.Add (MiscActions.IndentSelection);
-						RunActions (actions.ToArray ());
-						//set cursor to start of first line indented
-						Caret.Offset = roffset;
-						RunAction (CaretMoveActions.LineFirstNonWhitespace);
-	              
-						Reset ("");
-					};
+					Action<TextEditorData> indentAction = MakeIndentAction (repeatCount);
 					StartNewLastAction (indentAction);
 					RunAction (indentAction);
 					return;
@@ -1076,23 +1114,7 @@ namespace VimAddin
 			case State.Unindent:
 				if (((modifier & (Gdk.ModifierType.ControlMask)) == 0 && ((char)unicodeKey) == '<')) { //select current line to indent
 					// TODO: Stuff this into a delegate and go
-					var linesToUnindent = repeatCount;
-					Action<TextEditorData> unindentAction = delegate(TextEditorData data) {
-						List<Action<TextEditorData>> actions = new List<Action<TextEditorData>> ();
-						RunAction (CaretMoveActions.LineFirstNonWhitespace);
-						int roffset = Data.SelectionRange.Offset; //save caret position
-						actions.Add (SelectionActions.FromMoveAction (CaretMoveActions.LineEnd));
-						for (int i = 1; i < linesToUnindent; i++) {
-							actions.Add (SelectionActions.FromMoveAction (ViActions.Down));
-						}
-						actions.Add (MiscActions.RemoveIndentSelection);
-						RunActions (actions.ToArray ());
-						//set cursor to start of first line indented
-						Caret.Offset = roffset;
-						RunAction (CaretMoveActions.LineFirstNonWhitespace);
-	              
-						Reset ("");
-					};
+					Action<TextEditorData> unindentAction = MakeUnindentAction (repeatCount);
 					StartNewLastAction (unindentAction);
 					RunAction (unindentAction);
 					return;
@@ -1372,12 +1394,28 @@ namespace VimAddin
 					goto case 'c';
 					
 				case '>':
+					int roffset = Data.SelectionRange.Offset;
+					if (true) {
+						int lineStart, lineEnd;
+						MiscActions.GetSelectedLines (Data, out lineStart, out lineEnd);
+						int lines = lineEnd - lineStart + 1;
+						StartNewLastAction (MakeIndentAction (lines));
+					}
 					RunAction (MiscActions.IndentSelection);
+					Caret.Offset = roffset;
 					Reset ("");
 					return;
 					
 				case '<':
+					roffset = Data.SelectionRange.Offset;
+					if (true) {
+						int lineStart, lineEnd;
+						MiscActions.GetSelectedLines (Data, out lineStart, out lineEnd);
+						int lines = lineEnd - lineStart + 1;
+						StartNewLastAction (MakeUnindentAction (lines));
+					}
 					RunAction (MiscActions.RemoveIndentSelection);
+					Caret.Offset = roffset;
 					Reset ("");
 					return;
 
