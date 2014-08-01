@@ -273,6 +273,39 @@ namespace VimAddin
 		}
 
 		/**
+		Make an action that does action1 and then action2.
+		*/
+		protected Action<TextEditorData> MakeActionPair(Action<TextEditorData> action1,
+			Action<TextEditorData> action2)
+		{
+			Action<TextEditorData> action = delegate(TextEditorData data) {
+				RunAction(action1);
+				RunAction(action2);
+			};
+			return action;
+		}
+
+		/**
+		An action that saves the current caret position in the special mark `.
+		*/
+		protected void SaveContextMark(TextEditorData data)
+		{
+			RunAction (marks ['`'].SaveMark);
+		}
+
+		/**
+		Wrapper for ViActionMaps.GetNavCharAction. We catch and modify actions as necessary.
+		*/
+		protected Action<TextEditorData> GetNavCharAction(char unicodeKey)
+		{
+			Action<TextEditorData> action = ViActionMaps.GetNavCharAction (unicodeKey);
+			if (action == MiscActions.GotoMatchingBracket) {
+				action = MakeActionPair (SaveContextMark, action);
+			}
+			return action;
+		}
+
+		/**
 		Unindent specified number of lines from the current caret position.
 		*/
 		public Action<TextEditorData> MakeUnindentAction(int lines)
@@ -297,8 +330,12 @@ namespace VimAddin
 			return unindentAction;
 		}
 
+		/**
+		Action to go to the document end. This replaces CaretMoveActions.DocumentEnd, which puts us in a dicey spot.
+		*/
 		protected void ToDocumentEnd(TextEditorData data)
 		{
+
 			if (data.Document.LineCount > 1) {
 				data.Caret.Line = data.Document.LineCount - 1;
 			}
@@ -779,7 +816,7 @@ namespace VimAddin
 					
 				}
 				
-				action = ViActionMaps.GetNavCharAction ((char)unicodeKey);
+				action = GetNavCharAction ((char)unicodeKey);
 				if (action == null)
 					action = ViActionMaps.GetDirectionKeyAction (key, modifier);
 				if (action == null)
@@ -811,7 +848,7 @@ namespace VimAddin
 					} //get one extra line for yj
 					lineAction	= true;
 				} else {
-					action = ViActionMaps.GetNavCharAction ((char)unicodeKey);
+					action = GetNavCharAction ((char)unicodeKey);
 					if (action == null)
 						action = ViActionMaps.GetDirectionKeyAction (key, modifier);
 					if (action != null)
@@ -860,7 +897,7 @@ namespace VimAddin
 					} //get one extra line for yj
 					lineAction	= true;
 				} else {
-					action = ViActionMaps.GetNavCharAction ((char)unicodeKey);
+					action = GetNavCharAction ((char)unicodeKey);
 					if (action == null)
 						action = ViActionMaps.GetDirectionKeyAction (key, modifier);
 					if (action != null)
@@ -983,7 +1020,7 @@ namespace VimAddin
 					PasteBefore (true);
 					return;
 				}
-				action = ViActionMaps.GetNavCharAction ((char)unicodeKey);
+				action = GetNavCharAction ((char)unicodeKey);
 				if (action == null) {
 					action = ViActionMaps.GetDirectionKeyAction (key, modifier);
 				}
@@ -1019,7 +1056,7 @@ namespace VimAddin
 					PasteBefore (false);
 					return;
 				}
-				action = ViActionMaps.GetNavCharAction ((char)unicodeKey);
+				action = GetNavCharAction ((char)unicodeKey);
 				if (action == null) {
 					action = ViActionMaps.GetDirectionKeyAction (key, modifier);
 				}
@@ -1081,7 +1118,7 @@ namespace VimAddin
 					return;
 				}
 				
-				action = ViActionMaps.GetNavCharAction ((char)unicodeKey);
+				action = GetNavCharAction ((char)unicodeKey);
 				if (action == null)
 					action = ViActionMaps.GetDirectionKeyAction (key, modifier);
 
@@ -1120,7 +1157,7 @@ namespace VimAddin
 					return;
 				}
 				
-				action = ViActionMaps.GetNavCharAction ((char)unicodeKey);
+				action = GetNavCharAction ((char)unicodeKey);
 				if (action == null)
 					action = ViActionMaps.GetDirectionKeyAction (key, modifier);
 				
