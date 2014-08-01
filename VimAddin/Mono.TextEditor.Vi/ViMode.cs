@@ -84,6 +84,8 @@ namespace VimAddin
 		char macros_lastplayed = '@'; // start with the illegal macro character
 		string statusText = "";
 		List<Action<TextEditorData>> LastAction = new List<Action<TextEditorData>>();
+		// Lines, RightOffsetOnLastLine
+		Tuple<int, int> LastSelectionRange = new Tuple<int,int>(0,0);
 
 		/**
 		Cache keystroke sequence from last insert operation.
@@ -196,10 +198,42 @@ namespace VimAddin
 					CurState = State.Confirm;
 					var selection = Data.SelectionRange;
 					int lineStart, lineEnd;
+					int lookaheadOffset = Math.Min (Caret.Offset + 1000, Data.Document.TextLength);
 					MiscActions.GetSelectedLines (Data, out lineStart, out lineEnd);
+					int roffset = Data.SelectionRange.Offset;
+					int linesAhead = Math.Min(LastSelectionRange.Item1, Document.LineCount - Caret.Line);
+//					CaretMoveActions.LineStart(Data);
+					SelectionActions.StartSelection (Data);
+					if (linesAhead > 1) {
+						for (int i = 0; i < linesAhead; ++i) {
+							ViActions.Down (Data);
+						}
+						CaretMoveActions.LineStart (Data);
+					}
+					DocumentLine lastLine = Document.GetLineByOffset (Caret.Offset);
+					int lastLineOffset = Math.Min (LastSelectionRange.Item2, lastLine.EndOffset);
+					for (int i = 0; i < lastLineOffset; ++i) {
+						ViActions.Right (Data);
+					}
+					SelectionActions.EndSelection (Data);
+//					SelectionActions.StartSelection (Data);
+//					CaretMoveActions.LineFirstNonWhitespace (Data);
+//					ViActions.Down (Data);
+//					ViActions.Right (Data);
+//					ViActions.Right (Data);
+//					ViActions.Right (Data);
+//					ViActions.Right (Data);
+//					ViActions.Right (Data);
+//					SelectionActions.EndSelection (Data);
 
 					//return string.Format("line range: {0} {1}", lineStart, lineEnd);
-					return string.Format("line range: {0} {1}", selection.Offset, selection.Length);
+					return string.Format("s:{0} {1}; ({2},{3}) ({4}) ({5})",
+						selection.Offset,
+						selection.Length,
+						LastSelectionRange.Item1,
+						LastSelectionRange.Item2,
+						linesAhead,
+						Data.Document.TextLength);
 				}
 				break;
 			// case ':'
@@ -273,6 +307,38 @@ namespace VimAddin
 		}
 
 		/**
+		Apply an action to a selection of the same size we selected previously.
+		*/
+		protected Action<TextEditorData> MakeActionToApplyToLastSelection(Action<TextEditorData> actionToApply)
+		{
+			// LastSelectionRange is set by SaveSelectionRange
+			var lastLinesAhead = LastSelectionRange.Item1;
+			var lastLastLineOffset = LastSelectionRange.Item2;
+			Action<TextEditorData> action = delegate(TextEditorData data) {
+				// generate a selection from last selection range
+				SelectionActions.StartSelection(data);
+				int linesAhead = Math.Min(lastLinesAhead, data.Document.LineCount - data.Caret.Line);
+				SelectionActions.StartSelection (data);
+				if (linesAhead > 1) {
+					for (int i = 0; i < linesAhead; ++i) {
+						ViActions.Down (data);
+					}
+					CaretMoveActions.LineStart (data);
+				}
+				DocumentLine lastLine = Document.GetLineByOffset (data.Caret.Offset);
+				int lastLineOffset = Math.Min (lastLastLineOffset, lastLine.EndOffset);
+				for (int i = 0; i < lastLineOffset; ++i) {
+					ViActions.Right (data);
+				}
+				SelectionActions.EndSelection (data);
+
+				// apply the action
+				RunAction(actionToApply);
+			};
+			return action;
+		}
+
+		/**
 		Make an action that does action1 and then action2.
 		*/
 		protected Action<TextEditorData> MakeActionPair(Action<TextEditorData> action1,
@@ -291,6 +357,21 @@ namespace VimAddin
 		protected void SaveContextMark(TextEditorData data)
 		{
 			RunAction (marks ['`'].SaveMark);
+		}
+
+		protected void SaveSelectionRange(TextEditorData data)
+		{
+			int lineStart, lineEnd;
+			MiscActions.GetSelectedLines (data, out lineStart, out lineEnd);
+			int lines = lineEnd - lineStart + 1;
+			int offset = 0;
+			if (lines > 1) {
+				var lastLine = data.Document.GetLineByOffset (data.SelectionRange.EndOffset);
+				offset = data.SelectionRange.EndOffset - lastLine.Offset;
+			} else {
+				offset = data.SelectionRange.Length;
+			}
+			LastSelectionRange = new Tuple<int, int> (lines, offset);
 		}
 
 		/**
@@ -1406,10 +1487,12 @@ namespace VimAddin
 
 		public void ApplyActionToSelection (Gdk.ModifierType modifier, uint unicodeKey)
 		{
+			RunAction (SaveSelectionRange);
 			if (Data.IsSomethingSelected && (modifier & (Gdk.ModifierType.ControlMask)) == 0) {
 				switch ((char)unicodeKey) {
 				case 'x':
 				case 'd':
+					StartNewLastAction (MakeActionToApplyToLastSelection (ClipboardActions.Cut));
 					RunAction (ClipboardActions.Cut);
 					Reset ("Deleted selection");
 					return;
@@ -1421,6 +1504,7 @@ namespace VimAddin
 					return;
 				case 's':
 				case 'c':
+					StartNewLastAction (MakeActionToApplyToLastSelection (ClipboardActions.Cut));
 					RunAction (ClipboardActions.Cut);
 					Caret.Mode = CaretMode.Insert;
 					CurState = State.Insert;
@@ -1462,11 +1546,13 @@ namespace VimAddin
 					CurState = State.Command;
 					break;
 				case 'J':
+					StartNewLastAction (MakeActionToApplyToLastSelection (ViActions.Join));
 					RunAction (ViActions.Join);
 					Reset ("");
 					return;
 					
 				case '~':
+					StartNewLastAction (MakeActionToApplyToLastSelection (ViActions.ToggleCase));
 					RunAction (ViActions.ToggleCase);
 					Reset ("");
 					return;
