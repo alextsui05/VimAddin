@@ -54,11 +54,10 @@ namespace VimAddin
 	{
 		new ExtensibleTextEditor editor;
 		TabAction tabAction;
-		MonoDevelop.Ide.Gui.Document saveableDocument;
-		
-		public IdeViMode (ExtensibleTextEditor editor, MonoDevelop.Ide.Gui.Document doc)
+
+		public IdeViMode (ExtensibleTextEditor editor, MonoDevelop.Ide.Gui.Document doc) :
+			base (doc)
 		{
-			this.saveableDocument = doc;
 			this.editor = editor;
 			tabAction = new TabAction (editor);
 		}

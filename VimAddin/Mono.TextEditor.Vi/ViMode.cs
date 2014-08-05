@@ -32,7 +32,7 @@ using System.Text.RegularExpressions;
 using System.Collections.Generic;
 using System.Linq;
 using Mono.TextEditor;
-
+using MonoDevelop.Ide.CodeFormatting;
 namespace VimAddin
 {
 	/**
@@ -146,12 +146,59 @@ namespace VimAddin
 			}
 		}
 
+		protected MonoDevelop.Ide.Gui.Document saveableDocument;
+
+		public ViEditMode( MonoDevelop.Ide.Gui.Document doc )
+		{
+			saveableDocument = doc;
+		}
+
+		protected void FormatSelection( )
+		{
+			var doc = saveableDocument;
+			var formatter = CodeFormatterService.GetFormatter (Document.MimeType);
+			if (formatter == null)
+				return;
+
+			TextSegment selection;
+			var editor = Data;
+			if (editor.IsSomethingSelected) {
+				selection = editor.SelectionRange;
+			} else {
+				selection = editor.GetLine (editor.Caret.Line).Segment;
+			}
+
+			using (var undo = editor.OpenUndoGroup ()) {
+				var version = editor.Version;
+
+				if (formatter.SupportsOnTheFlyFormatting) {
+					formatter.OnTheFlyFormat (doc, selection.Offset, selection.EndOffset);
+				} else {
+					var pol = doc.Project != null ? doc.Project.Policies : null;
+					try {
+						string text = formatter.FormatText (pol, editor.Text, selection.Offset, selection.EndOffset);
+						if (text != null) {
+							editor.Replace (selection.Offset, selection.Length, text);
+						}
+					} catch (Exception e) {
+						Console.WriteLine ("Error during format.");
+					}
+				}
+
+				if (editor.IsSomethingSelected) {
+					int newOffset = version.MoveOffsetTo (editor.Version, selection.Offset);
+					int newEndOffset = version.MoveOffsetTo (editor.Version, selection.EndOffset);
+					editor.SetSelection (newOffset, newEndOffset);
+				}
+			}
+		}
+
 		protected virtual string RunExCommand (string command)
 		{
 			// by default, return to normal state after executing a command
 			CurState = State.Normal;
 
-			switch (command[0]) {
+			switch (command [0]) {
 			case ':':
 				if (2 > command.Length)
 					break;
@@ -210,6 +257,7 @@ namespace VimAddin
 						}
 						CaretMoveActions.LineStart (Data);
 					}
+
 					DocumentLine lastLine = Document.GetLineByOffset (Caret.Offset);
 					int lastLineOffset = Math.Min (LastSelectionRange.Item2, lastLine.EndOffset);
 					for (int i = 0; i < lastLineOffset; ++i) {
@@ -1554,6 +1602,11 @@ namespace VimAddin
 				case '~':
 					StartNewLastAction (MakeActionToApplyToLastSelection (ViActions.ToggleCase));
 					RunAction (ViActions.ToggleCase);
+					Reset ("");
+					return;
+				
+				case '=':
+					FormatSelection ();
 					Reset ("");
 					return;
 				}
