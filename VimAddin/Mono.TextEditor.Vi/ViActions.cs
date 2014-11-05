@@ -41,9 +41,19 @@ namespace VimAddin
 			data.Caret.Offset = ViWordFindStrategy.FindNextSubwordEndOffset (data.Document, data.Caret.Offset);
 		}
 
+		public static void NextSubwordEndPlus1 (TextEditorData data)
+		{
+			data.Caret.Offset = ViWordFindStrategy.FindNextSubwordEndOffset (data.Document, data.Caret.Offset) + 1;
+		}
+
 		public static void NextWordEnd (TextEditorData data)
 		{
 			data.Caret.Offset = ViWordFindStrategy.FindNextWordEndOffset (data.Document, data.Caret.Offset);
+		}
+
+		public static void NextWordEndPlus1 (TextEditorData data)
+		{
+			data.Caret.Offset = ViWordFindStrategy.FindNextWordEndOffset (data.Document, data.Caret.Offset) + 1;
 		}
 
 		public static void MoveToNextEmptyLine (TextEditorData data)

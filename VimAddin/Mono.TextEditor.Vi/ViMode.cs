@@ -425,9 +425,9 @@ namespace VimAddin
 		/**
 		Wrapper for ViActionMaps.GetNavCharAction. We catch and modify actions as necessary.
 		*/
-		protected Action<TextEditorData> GetNavCharAction(char unicodeKey)
+		protected Action<TextEditorData> GetNavCharAction(char unicodeKey, bool isCommand)
 		{
-			Action<TextEditorData> action = ViActionMaps.GetNavCharAction (unicodeKey);
+			Action<TextEditorData> action = ViActionMaps.GetNavCharAction (unicodeKey, isCommand);
 			if (action == MiscActions.GotoMatchingBracket) {
 				action = MakeActionPair (SaveContextMark, action);
 			}
@@ -945,7 +945,7 @@ namespace VimAddin
 					
 				}
 				
-				action = GetNavCharAction ((char)unicodeKey);
+				action = GetNavCharAction ((char)unicodeKey, true);
 				if (action == null)
 					action = ViActionMaps.GetDirectionKeyAction (key, modifier);
 				if (action == null)
@@ -977,7 +977,7 @@ namespace VimAddin
 					} //get one extra line for yj
 					lineAction	= true;
 				} else {
-					action = GetNavCharAction ((char)unicodeKey);
+					action = GetNavCharAction ((char)unicodeKey, false);
 					if (action == null)
 						action = ViActionMaps.GetDirectionKeyAction (key, modifier);
 					if (action != null)
@@ -1026,7 +1026,7 @@ namespace VimAddin
 					} //get one extra line for yj
 					lineAction	= true;
 				} else {
-					action = GetNavCharAction ((char)unicodeKey);
+					action = GetNavCharAction ((char)unicodeKey, false);
 					if (action == null)
 						action = ViActionMaps.GetDirectionKeyAction (key, modifier);
 					if (action != null)
@@ -1149,7 +1149,7 @@ namespace VimAddin
 					PasteBefore (true);
 					return;
 				}
-				action = GetNavCharAction ((char)unicodeKey);
+				action = GetNavCharAction ((char)unicodeKey, false);
 				if (action == null) {
 					action = ViActionMaps.GetDirectionKeyAction (key, modifier);
 				}
@@ -1185,7 +1185,7 @@ namespace VimAddin
 					PasteBefore (false);
 					return;
 				}
-				action = GetNavCharAction ((char)unicodeKey);
+				action = GetNavCharAction ((char)unicodeKey, false);
 				if (action == null) {
 					action = ViActionMaps.GetDirectionKeyAction (key, modifier);
 				}
@@ -1247,7 +1247,7 @@ namespace VimAddin
 					return;
 				}
 				
-				action = GetNavCharAction ((char)unicodeKey);
+				action = GetNavCharAction ((char)unicodeKey, false);
 				if (action == null)
 					action = ViActionMaps.GetDirectionKeyAction (key, modifier);
 
@@ -1286,7 +1286,7 @@ namespace VimAddin
 					return;
 				}
 				
-				action = GetNavCharAction ((char)unicodeKey);
+				action = GetNavCharAction ((char)unicodeKey, false);
 				if (action == null)
 					action = ViActionMaps.GetDirectionKeyAction (key, modifier);
 				

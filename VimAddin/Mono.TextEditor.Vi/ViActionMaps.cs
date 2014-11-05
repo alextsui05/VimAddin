@@ -78,10 +78,16 @@ namespace VimAddin
 			case 'b':
 				return ViActions.WordStart;
 			}
-			return GetNavCharAction (c);
+			return GetNavCharAction (c, false);
 		}
-		
-		public static Action<TextEditorData> GetNavCharAction (char c)
+
+		/// <summary>
+		/// Gets the nav char action.
+		/// </summary>
+		/// <returns>The nav char action.</returns>
+		/// <param name="c">C.</param>
+		/// <param name="isCommand">If set to <c>true</c> c is a command instead of motion is command.</param>
+		public static Action<TextEditorData> GetNavCharAction (char c, bool isCommand)
 		{
 			switch (c) {
 			case 'h':
@@ -93,9 +99,17 @@ namespace VimAddin
 			case 'l':
 				return ViActions.Right;
 			case 'e':
-				return ViActions.NextSubwordEnd;
+				if (isCommand) {
+					return ViActions.NextSubwordEnd;
+				} else {
+					return ViActions.NextSubwordEndPlus1;
+				}
 			case 'E':
-				return ViActions.NextWordEnd;
+				if (isCommand) {
+					return ViActions.NextWordEnd;
+				} else {
+					return ViActions.NextWordEndPlus1;
+				}
 			case 'w':
 				return CaretMoveActions.NextSubword;
 			case 'W':
