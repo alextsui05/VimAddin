@@ -5,7 +5,7 @@ using Mono.Addins.Description;
 [assembly:Addin (
 	"VimAddin", 
 	Namespace = "VimAddin",
-	Version = "1.1.7"
+	Version = "1.1.8"
 )]
 
 [assembly:AddinName ("VimAddin")]
