@@ -5,4 +5,7 @@
 	<Extension path="/MonoDevelop/Ide/TextEditorExtensions">
 		<Class class="VimAddin.VimTextEditorExtension" />
 	</Extension>
+	<Extension path="/MonoDevelop/Ide/GlobalOptionsDialog/TextEditor">
+	<Section id="VimAddin" _label="VimAddin" fill="true" class="VimAddin.VimAddinOptionsPanel" />
+	</Extension>
 </ExtensionModel>

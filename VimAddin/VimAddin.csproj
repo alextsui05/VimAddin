@@ -3,11 +3,11 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectTypeGuids>{7DBEB09D-BB9F-4D92-A141-A009135475EF};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
-    <ProjectGuid>{775E978B-2C7E-4A27-A708-BBC685E5D567}</ProjectGuid>
+    <ProjectGuid>{6193DC45-BC2C-422C-A9B2-233E961D83FE}</ProjectGuid>
     <OutputType>Library</OutputType>
     <RootNamespace>VimAddin</RootNamespace>
     <AssemblyName>VimAddin</AssemblyName>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -29,46 +29,78 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
-    <Reference Include="System.Xml" />
-    <Reference Include="System.Core" />
-    <Reference Include="gtk-sharp" />
-    <Reference Include="glib-sharp" />
-    <Reference Include="gdk-sharp" />
-    <Reference Include="pango-sharp" />
-    <Reference Include="Mono.Cairo" />
-    <Reference Include="atk-sharp, Version=2.12.0.0, Culture=neutral, PublicKeyToken=35e10195dab3c99f" />
+    <Reference Include="gtk-sharp, Version=2.4.0.0, Culture=neutral, PublicKeyToken=35e10195dab3c99f">
+      <SpecificVersion>False</SpecificVersion>
+      <Package>gtk-sharp-2.0</Package>
+    </Reference>
+    <Reference Include="gdk-sharp, Version=2.4.0.0, Culture=neutral, PublicKeyToken=35e10195dab3c99f">
+      <SpecificVersion>False</SpecificVersion>
+      <Package>gtk-sharp-2.0</Package>
+    </Reference>
+    <Reference Include="glib-sharp, Version=2.4.0.0, Culture=neutral, PublicKeyToken=35e10195dab3c99f">
+      <SpecificVersion>False</SpecificVersion>
+      <Package>glib-sharp-2.0</Package>
+    </Reference>
+    <Reference Include="glade-sharp, Version=2.4.0.0, Culture=neutral, PublicKeyToken=35e10195dab3c99f">
+      <SpecificVersion>False</SpecificVersion>
+      <Package>glade-sharp-2.0</Package>
+    </Reference>
+    <Reference Include="pango-sharp, Version=2.4.0.0, Culture=neutral, PublicKeyToken=35e10195dab3c99f">
+      <SpecificVersion>False</SpecificVersion>
+      <Package>gtk-sharp-2.0</Package>
+    </Reference>
+    <Reference Include="atk-sharp, Version=2.4.0.0, Culture=neutral, PublicKeyToken=35e10195dab3c99f">
+      <SpecificVersion>False</SpecificVersion>
+      <Package>gtk-sharp-2.0</Package>
+    </Reference>
     <Reference Include="Mono.Addins">
       <HintPath>/Applications/Xamarin Studio.app/Contents/MacOS/lib/monodevelop/bin/Mono.Addins.dll</HintPath>
       <HintPath>../../monodevelop/main/build/bin/Mono.Addins.dll</HintPath>
+      <Package>mono-addins</Package>
     </Reference>
     <Reference Include="ICSharpCode.NRefactory">
       <HintPath>/Applications/Xamarin Studio.app/Contents/MacOS/lib/monodevelop/bin/ICSharpCode.NRefactory.dll</HintPath>
       <HintPath>../../monodevelop/main/build/bin/ICSharpCode.NRefactory.dll</HintPath>
+      <Package>monodevelop</Package>
     </Reference>
     <Reference Include="Mono.TextEditor">
       <HintPath>/Applications/Xamarin Studio.app/Contents/MacOS/lib/monodevelop/bin/Mono.TextEditor.dll</HintPath>
       <HintPath>../../monodevelop/main/build/bin/Mono.TextEditor.dll</HintPath>
+      <Package>monodevelop</Package>
     </Reference>
     <Reference Include="MonoDevelop.Core">
       <HintPath>/Applications/Xamarin Studio.app/Contents/MacOS/lib/monodevelop/bin/MonoDevelop.Core.dll</HintPath>
       <HintPath>../../monodevelop/main/build/bin/MonoDevelop.Core.dll</HintPath>
+      <Package>monodevelop</Package>
     </Reference>
     <Reference Include="MonoDevelop.DesignerSupport">
       <HintPath>/Applications/Xamarin Studio.app/Contents/MacOS/lib/monodevelop/AddIns/MonoDevelop.DesignerSupport/MonoDevelop.DesignerSupport.dll</HintPath>
       <HintPath>../../monodevelop/main/build/AddIns/MonoDevelop.DesignerSupport/MonoDevelop.DesignerSupport.dll</HintPath>
+      <Package>monodevelop-core-addins</Package>
     </Reference>
     <Reference Include="MonoDevelop.Ide">
       <HintPath>/Applications/Xamarin Studio.app/Contents/MacOS/lib/monodevelop/bin/MonoDevelop.Ide.dll</HintPath>
       <HintPath>../../monodevelop/main/build/bin/MonoDevelop.Ide.dll</HintPath>
+      <Package>monodevelop</Package>
     </Reference>
     <Reference Include="MonoDevelop.SourceEditor2">
       <HintPath>/Applications/Xamarin Studio.app/Contents/MacOS/lib/monodevelop/AddIns/DisplayBindings/SourceEditor/MonoDevelop.SourceEditor2.dll</HintPath>
       <HintPath>../../monodevelop/main/build/AddIns/DisplayBindings/SourceEditor/MonoDevelop.SourceEditor2.dll</HintPath>
+      <Package>monodevelop-core-addins</Package>
     </Reference>
+    <Reference Include="Mono.Posix" />
+    <Reference Include="Mono.Cairo" />
   </ItemGroup>
   <ItemGroup>
+    <EmbeddedResource Include="gtk-gui\gui.stetic">
+      <LogicalName>gui.stetic</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Properties\Manifest.addin.xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="gtk-gui\generated.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Properties\AddinInfo.cs" />
+    <Compile Include="IdeViMode.cs" />
     <Compile Include="VimTextEditorExtension.cs" />
     <Compile Include="Mono.TextEditor.Vi\NewViEditMode.cs" />
     <Compile Include="Mono.TextEditor.Vi\ViActionMaps.cs" />
@@ -85,13 +117,9 @@
     <Compile Include="Mono.TextEditor.Vi\ViModeAbortException.cs" />
     <Compile Include="Mono.TextEditor.Vi\ViStatusArea.cs" />
     <Compile Include="Mono.TextEditor.Vi\ViWordFindStrategy.cs" />
-    <Compile Include="IdeViMode.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="Properties\Manifest.addin.xml" />
+    <Compile Include="Properties\AddinInfo.cs" />
+    <Compile Include="VimAddinOptionsPanelWidget.cs" />
+    <Compile Include="gtk-gui\VimAddin.VimAddinOptionsPanelWidget.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
-  <ItemGroup>
-    <Folder Include="Mono.TextEditor.Vi\" />
-  </ItemGroup>
 </Project>
