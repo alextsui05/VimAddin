@@ -7,6 +7,8 @@ namespace VimAddin
 		private global::Gtk.Fixed fixed1;
 		
 		private global::Gtk.CheckButton checkbutton1;
+		
+		private global::Gtk.Label label1;
 
 		protected virtual void Build ()
 		{
@@ -28,8 +30,16 @@ namespace VimAddin
 			this.checkbutton1.UseUnderline = true;
 			this.fixed1.Add (this.checkbutton1);
 			global::Gtk.Fixed.FixedChild w1 = ((global::Gtk.Fixed.FixedChild)(this.fixed1 [this.checkbutton1]));
-			w1.X = 15;
-			w1.Y = 15;
+			w1.X = 14;
+			w1.Y = 41;
+			// Container child fixed1.Gtk.Fixed+FixedChild
+			this.label1 = new global::Gtk.Label ();
+			this.label1.Name = "label1";
+			this.label1.LabelProp = global::Mono.Unix.Catalog.GetString ("label1");
+			this.fixed1.Add (this.label1);
+			global::Gtk.Fixed.FixedChild w2 = ((global::Gtk.Fixed.FixedChild)(this.fixed1 [this.label1]));
+			w2.X = 13;
+			w2.Y = 10;
 			this.Add (this.fixed1);
 			if ((this.Child != null)) {
 				this.Child.ShowAll ();

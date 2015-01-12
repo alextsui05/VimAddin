@@ -1,7 +1,13 @@
 ﻿using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Reflection;
+using System.Diagnostics;
 
 using MonoDevelop.Ide.Gui.Dialogs; // for OptionsPanel
 using MonoDevelop.Core; // for PropertyService
+
+using Mono.Addins;
 
 namespace VimAddin
 {
@@ -11,6 +17,11 @@ namespace VimAddin
 		public VimAddinOptionsPanelWidget ()
 		{
 			this.Build ();
+			Assembly assembly = Assembly.GetExecutingAssembly ();
+			AddinAttribute addinAttr = assembly.GetCustomAttribute<AddinAttribute> ();
+			string labelText = String.Format ("VimAddin version {0}",
+				                   addinAttr.Version);
+			this.label1.Text = labelText;
 			this.checkbutton1.Active = (bool)PropertyService.Get ("UseViModes", false);
 		}
 
