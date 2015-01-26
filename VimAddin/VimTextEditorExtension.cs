@@ -3,9 +3,16 @@ using MonoDevelop.Ide.Gui.Content;
 using MonoDevelop.SourceEditor;
 using MonoDevelop.Core;
 using MonoDevelop.Ide;
+using MonoDevelop.Components.Commands;
+using Mono.TextEditor;
 
 namespace VimAddin
 {
+	public enum VimAddinCommands
+	{
+		PageDown,
+	}
+
 	public class VimTextEditorExtension : TextEditorExtension
 	{
 		bool isEnabled;
@@ -51,6 +58,49 @@ namespace VimAddin
 		{
 			PropertyService.PropertyChanged -= UpdatePreferences;
 			base.Dispose ();
+		}
+	}
+
+	public class NullHandler : CommandHandler
+	{
+		protected bool VimAddinIsEnabled()
+		{
+			MonoDevelop.Ide.Gui.Document doc = IdeApp.Workbench.ActiveDocument;
+			if (doc != null && doc.GetContent<ITextEditorDataProvider> () != null)
+			{
+				var editorView = doc.GetContent<SourceEditorView> ();
+				var textEditor = editorView.TextEditor;
+				return textEditor.CurrentMode.GetType () == typeof(VimAddin.IdeViMode);
+			}
+			return false;
+		}
+
+		protected override void Run()
+		{
+			MonoDevelop.Ide.Gui.Document doc = IdeApp.Workbench.ActiveDocument;
+			var textEditorData = doc.GetContent<ITextEditorDataProvider> ().GetTextEditorData ();
+			var editorView = doc.GetContent<SourceEditorView> ();
+			var textEditor = editorView.TextEditor;
+//			textEditor.CurrentMode.InternalHandleKeypress (textEditor, textEditorData,
+//				Gdk.Key.f,
+//				(char)'f',
+//				Gdk.ModifierType.ControlMask);
+			var vimEditor = (VimAddin.IdeViMode) textEditor.CurrentMode;
+			vimEditor.SendKeys (Gdk.Key.f, 'f', Gdk.ModifierType.ControlMask);
+		}
+
+		protected override void Update (CommandInfo info)
+		{
+//			Console.WriteLine ("Update");
+//			MonoDevelop.Ide.Gui.Document doc = IdeApp.Workbench.ActiveDocument;
+//			info.Enabled = doc != null && doc.GetContent<ITextEditorDataProvider> () != null;
+//			if (info.Enabled) {
+//				var editorView = doc.GetContent<SourceEditorView> ();
+//				var textEditor = editorView.TextEditor;
+//				info.Enabled = textEditor.CurrentMode.GetType () == typeof(VimAddin.IdeViMode);
+//				Console.WriteLine (info.Enabled);
+//			}
+			info.Enabled = VimAddinIsEnabled ();
 		}
 	}
 }

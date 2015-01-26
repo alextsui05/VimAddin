@@ -168,5 +168,10 @@ namespace VimAddin
 
 			base.HandleKeypress (key, unicodeKey, modifier);
 		}
+
+		public void SendKeys(Gdk.Key key, uint unicodeKey, Gdk.ModifierType modifier)
+		{
+			HandleKeypress (key, unicodeKey, modifier);
+		}
 	}
 }
