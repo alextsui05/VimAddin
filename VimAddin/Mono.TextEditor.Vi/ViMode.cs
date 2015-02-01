@@ -153,6 +153,16 @@ namespace VimAddin
 			saveableDocument = doc;
 		}
 
+		public bool HasData( )
+		{
+			return Data != null;
+		}
+
+		public bool HasTextEditorData( )
+		{
+			return textEditorData != null;
+		}
+
 		protected void FormatSelection( )
 		{
 			var doc = saveableDocument;
@@ -501,6 +511,8 @@ namespace VimAddin
 
 		void CheckVisualMode ()
 		{
+			if (Data == null)
+				Console.WriteLine ("PANIC");
 			if (CurState == ViEditMode.State.Visual || CurState == ViEditMode.State.Visual) {
 				if (!Data.IsSomethingSelected)
 					CurState = ViEditMode.State.Normal;
@@ -653,6 +665,11 @@ namespace VimAddin
 
 		protected override void HandleKeypress (Gdk.Key key, uint unicodeKey, Gdk.ModifierType modifier)
 		{
+			if (Data != null) {
+				Console.WriteLine ("Data is not null at start of ViMode.HandleKeypress");
+				Console.WriteLine (CurState);
+			}
+
 			// Reset on Esc, Ctrl-C, Ctrl-[
 			if (key == Gdk.Key.Escape) {
 				if (currentMacro != null) {
@@ -860,7 +877,8 @@ namespace VimAddin
 					case 'S':
 						if (!Data.IsSomethingSelected)
 							RunAction (SelectionActions.LineActionFromMoveAction (CaretMoveActions.LineEnd));
-						else Data.SetSelectLines (Data.MainSelection.Anchor.Line, Data.Caret.Line);
+						else
+							Data.SetSelectLines (Data.MainSelection.Anchor.Line, Data.Caret.Line);
 						RunAction (ClipboardActions.Cut);
 						goto case 'i';
 						
@@ -893,7 +911,7 @@ namespace VimAddin
 						Caret.Line = line;
 						return;
 					case 'M':
-						line = Editor.PointToLocation (0, Editor.Allocation.Height/2).Line;
+						line = Editor.PointToLocation (0, Editor.Allocation.Height / 2).Line;
 						if (line < DocumentLocation.MinLine)
 							line = Document.LineCount;
 						Caret.Line = line;
@@ -930,7 +948,7 @@ namespace VimAddin
 							return;
 						} 
 						currentMacro = null;
-						Reset("Macro Recorded");
+						Reset ("Macro Recorded");
 						return;
 					case '*':
 						SearchWordAtCaret (backward: false);
@@ -953,6 +971,9 @@ namespace VimAddin
 				
 				if (action != null)
 					RunRepeatableAction (action);
+
+				if (Data == null)
+					Console.WriteLine ("ViMode.HandleKeypress: right before CheckVisualMode, Data is null");
 				
 				//undo/redo may leave MD with a selection mode without activating visual mode
 				CheckVisualMode ();

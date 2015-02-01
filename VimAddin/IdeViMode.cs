@@ -156,6 +156,7 @@ namespace VimAddin
 
 		protected override void HandleKeypress (Gdk.Key key, uint unicodeKey, Gdk.ModifierType modifier)
 		{
+			Console.WriteLine ("In IdeViMode.HandleKeypress");
 			if (0 != (Gdk.ModifierType.ControlMask & modifier)) {
 				switch (key) {
 				case Gdk.Key.bracketright:
