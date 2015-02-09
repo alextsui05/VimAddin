@@ -3,9 +3,17 @@ using MonoDevelop.Ide.Gui.Content;
 using MonoDevelop.SourceEditor;
 using MonoDevelop.Core;
 using MonoDevelop.Ide;
+using MonoDevelop.Components.Commands;
+using Mono.TextEditor;
 
 namespace VimAddin
 {
+	public enum VimAddinCommands
+	{
+		PageDown,
+		PageUp
+	}
+
 	public class VimTextEditorExtension : TextEditorExtension
 	{
 		bool isEnabled;
@@ -51,6 +59,76 @@ namespace VimAddin
 		{
 			PropertyService.PropertyChanged -= UpdatePreferences;
 			base.Dispose ();
+		}
+	}
+
+	public class VimAddinCommandHandler : CommandHandler
+	{
+		protected bool VimAddinIsEnabled()
+		{
+			MonoDevelop.Ide.Gui.Document doc = IdeApp.Workbench.ActiveDocument;
+			if (doc != null && doc.GetContent<ITextEditorDataProvider> () != null)
+			{
+				var editorView = doc.GetContent<SourceEditorView> ();
+				var textEditor = editorView.TextEditor;
+				return textEditor.CurrentMode.GetType () == typeof(VimAddin.IdeViMode);
+			}
+			return false;
+		}
+
+		protected override void Update (CommandInfo info)
+		{
+			info.Enabled = VimAddinIsEnabled ();
+		}
+	}
+
+	public class PageUpHandler : VimAddinCommandHandler
+	{
+		protected override void Run()
+		{
+			MonoDevelop.Ide.Gui.Document doc = IdeApp.Workbench.ActiveDocument;
+			var textEditorData = doc.GetContent<ITextEditorDataProvider> ().GetTextEditorData ();
+			var vimEditor = (VimAddin.IdeViMode) textEditorData.CurrentMode;
+			vimEditor.InternalHandleKeypress (null, textEditorData,
+				Gdk.Key.u, (uint)'u', Gdk.ModifierType.ControlMask);
+		}
+	}
+
+	public class PageDownHandler : VimAddinCommandHandler
+	{
+		protected override void Run()
+		{
+			MonoDevelop.Ide.Gui.Document doc = IdeApp.Workbench.ActiveDocument;
+//
+			var textEditorData = doc.GetContent<ITextEditorDataProvider> ().GetTextEditorData ();
+//			var editorView = doc.GetContent<SourceEditorView> ();
+////			if (textEditorData.GetType () == typeof(TextEditorData)) {
+////				Console.WriteLine ("textEditorData is the expected type");
+////			}
+//
+//			var textEditor = editorView.TextEditor;
+////			textEditor.CurrentMode.InternalHandleKeypress (textEditor, textEditorData,
+////				Gdk.Key.f,
+////				(char)'f',
+////				Gdk.ModifierType.ControlMask);
+			var vimEditor = (VimAddin.IdeViMode) textEditorData.CurrentMode;
+//			if (vimEditor.HasTextEditorData ()) {
+//				Console.WriteLine ("Has textEditorData");
+//			} else {
+//				Console.WriteLine ("Has no textEditorData");
+//			}
+//			if (vimEditor.HasData ()) {
+//				vimEditor.SendKeys (Gdk.Key.f, 'f', Gdk.ModifierType.ControlMask);
+//			} else {
+//				Console.WriteLine ("Data is null");
+//				Console.WriteLine(vimEditor.ToString ());
+//			}
+//			if (textEditorData == null) {
+//				Console.WriteLine ("textEditorData is null");
+//			} else {
+//				Console.WriteLine ("textEditorData is not null");
+//			}
+			vimEditor.InternalHandleKeypress (null, textEditorData, Gdk.Key.d, (uint)'d', Gdk.ModifierType.ControlMask);
 		}
 	}
 }

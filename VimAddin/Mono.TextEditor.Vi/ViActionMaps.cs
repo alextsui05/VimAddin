@@ -136,7 +136,7 @@ namespace VimAddin
 			}
 			return null;
 		}
-		
+			
 		public static Action<TextEditorData> GetDirectionKeyAction (Gdk.Key key, Gdk.ModifierType modifier)
 		{
 			//

@@ -2,6 +2,20 @@
 <ExtensionModel>
 	<Runtime>
 	</Runtime>
+	<Extension path="/MonoDevelop/Ide/Commands">
+		<Category _name="VimAddin" id="VimAddin">
+			<Command id="VimAddin.VimAddinCommands.PageDown"
+				_label="Page Down"
+				_description="Page down in the text editor"
+				shortcut="Control|F"
+				defaultHandler="VimAddin.PageDownHandler" />
+			<Command id="VimAddin.VimAddinCommands.PageUp"
+				_label="Page Up"
+				_description="Page up in the text editor"
+				shortcut="Control|B"
+				defaultHandler="VimAddin.PageUpHandler" />
+		</Category>
+	</Extension>
 	<Extension path="/MonoDevelop/Ide/TextEditorExtensions">
 		<Class class="VimAddin.VimTextEditorExtension" />
 	</Extension>
