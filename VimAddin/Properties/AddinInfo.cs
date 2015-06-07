@@ -13,5 +13,5 @@ using Mono.Addins.Description;
 [assembly:AddinDescription ("A fork of MonoDevelop vi modes. See https://github.com/alextsui05/VimAddin")]
 [assembly:AddinAuthor ("atsui")]
 
-[assembly:AddinDependency ("::MonoDevelop.Core", MonoDevelop.BuildInfo.Version)]
-[assembly:AddinDependency ("::MonoDevelop.Ide", MonoDevelop.BuildInfo.Version)]
+[assembly:AddinDependency ("::MonoDevelop.Core", "4.0")]
+[assembly:AddinDependency ("::MonoDevelop.Ide", "4.0")]
